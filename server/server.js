@@ -9,11 +9,18 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors({
-  origin: process.env.BASE_URL, // Update with your frontend URL
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true, // If using cookies or authentication
-}));
+app.use(
+  cors({
+    origin: [
+      "https://techinsightsai.vercel.app",
+      process.env.BASE_URL,
+      "http://localhost:5173",
+    ],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
 app.use(express.json());
 
 // Function to connect to MongoDB
@@ -32,13 +39,15 @@ const startServer = async () => {
   await connectDB();
 
   // Routes
-  app.use("/",(req, res) => res.send("Backend is running!"));
   app.use("/api/blogs", blogRoutes);
 
   // Health check route
   app.get("/health", (req, res) => {
     res.json({ status: "ok" });
   });
+
+  // Root route
+  app.get("/", (req, res) => res.send("Backend is running!"));
 
   // Start server
   app.listen(PORT, () => {
