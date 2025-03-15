@@ -32,6 +32,7 @@ const startServer = async () => {
   await connectDB();
 
   // Routes
+  app.use("/",(req, res) => res.send("Backend is running!"));
   app.use("/api/blogs", blogRoutes);
 
   // Health check route
