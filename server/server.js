@@ -8,19 +8,25 @@ const setupCronJobs = require("./cron/blogGenerator");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(
-  cors({
-    origin: [
-      "https://techinsightsai.vercel.app",
-      process.env.BASE_URL,
-      "http://localhost:5173",
-    ],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true,
-    optionsSuccessStatus: 204,
-  })
-);
+// More permissive CORS setup
+app.use(cors());
+
+// Optional: For specific CORS needs, you can set up a custom middleware
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(204).send();
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Function to connect to MongoDB
