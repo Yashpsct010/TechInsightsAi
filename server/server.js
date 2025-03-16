@@ -41,7 +41,7 @@ const connectDB = async () => {
   }
 };
 
-// Define routes
+// Define routes - ensure the path prefix matches frontend requests
 app.use("/api/blogs", blogRoutes);
 
 // Health check route
@@ -51,6 +51,15 @@ app.get("/health", (req, res) => {
 
 // Root route
 app.get("/", (req, res) => res.send("Backend is running!"));
+
+// Handle 404 errors for any other routes
+app.use((req, res) => {
+  console.log(`Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: "Not Found",
+    message: `Route ${req.originalUrl} does not exist`,
+  });
+});
 
 // For serverless environments like Vercel
 if (process.env.VERCEL) {
