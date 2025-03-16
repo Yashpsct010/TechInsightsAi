@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchLatestBlog } from './services/blogService';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -7,29 +7,77 @@ const Blog = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedGenre, setSelectedGenre] = useState(null);
-
-    useEffect(() => {
-        async function loadBlog() {
-            try {
-                setLoading(true);
-                setError(null);
-                const blogData = await fetchLatestBlog(selectedGenre);
-                setBlog(blogData);
-            } catch (err) {
-                console.error("Failed to load blog:", err);
-                setError(`Failed to load blog: ${err.message}`);
-            } finally {
-                setLoading(false);
+    const [isRetrying, setIsRetrying] = useState(false);
+    
+    // Debounce genre changes to prevent rapid API requests
+    const debouncedFetchBlog = useCallback((genre) => {
+        let timerId = null;
+        
+        return (genreValue) => {
+            if (timerId) {
+                clearTimeout(timerId);
             }
+            
+            // Small delay to prevent multiple rapid requests
+            timerId = setTimeout(() => {
+                loadBlog(genreValue);
+            }, 300);
+            
+            return () => {
+                if (timerId) clearTimeout(timerId);
+            };
+        };
+    }, []);
+    
+    // Use useCallback to prevent recreating this function on every render
+    const loadBlog = useCallback(async (genreValue) => {
+        try {
+            setLoading(true);
+            setError(null);
+            setIsRetrying(false);
+            
+            console.log(`Loading blog for genre: ${genreValue || 'all'}`);
+            const blogData = await fetchLatestBlog(genreValue);
+            
+            if (!blogData) {
+                throw new Error("No blog data returned from server");
+            }
+            
+            setBlog(blogData);
+        } catch (err) {
+            console.error("Failed to load blog:", err);
+            
+            // More user-friendly error message
+            const errorMessage = err.message || "An unexpected error occurred";
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
+    }, []);
 
-        loadBlog();
-    }, [selectedGenre]);
+    // Retry logic for failed requests
+    const handleRetry = useCallback(() => {
+        setIsRetrying(true);
+        // Short delay before retry
+        setTimeout(() => {
+            loadBlog(selectedGenre);
+        }, 500);
+    }, [selectedGenre, loadBlog]);
+
+    // Initial load and genre change handler
+    useEffect(() => {
+        const cleanup = debouncedFetchBlog()(selectedGenre);
+        return cleanup;
+    }, [selectedGenre, debouncedFetchBlog]);
 
     const handleGenreChange = (genre) => {
-        setSelectedGenre(genre === "all" ? null : genre);
+        // Only change if different
+        if ((genre === "all" ? null : genre) !== selectedGenre) {
+            setSelectedGenre(genre === "all" ? null : genre);
+        }
     };
 
+    // Same genres list
     const genres = [
         { id: 'all', name: 'All Topics' },
         { id: 'tech-news', name: 'Tech News' },
@@ -47,6 +95,7 @@ const Blog = () => {
             transition={{ duration: 0.5 }}
             className="container mx-auto px-4 py-8 max-w-4xl pt-24 md:pt-28"
         >
+            {/* Genre selector - unchanged */}
             <motion.div
                 className="mb-8"
                 initial={{ y: -20, opacity: 0 }}
@@ -60,15 +109,18 @@ const Blog = () => {
                         {genres.map((genre, index) => (
                             <motion.button
                                 key={genre.id}
-                                className={`px-4 py-2 rounded-md border transition-colors ${selectedGenre === (genre.id === 'all' ? null : genre.id)
+                                className={`px-4 py-2 rounded-md border transition-colors ${
+                                    selectedGenre === (genre.id === 'all' ? null : genre.id)
                                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
                                 onClick={() => handleGenreChange(genre.id)}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
+                                disabled={loading}
                             >
                                 {genre.name}
                             </motion.button>
@@ -78,6 +130,7 @@ const Blog = () => {
             </motion.div>
 
             <AnimatePresence mode="wait">
+                {/* Improved loading indicator */}
                 {loading && (
                     <motion.div
                         key="loading"
@@ -91,11 +144,14 @@ const Blog = () => {
                             animate={{ rotate: 360 }}
                             transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                         />
-                        <p className="mt-4 text-gray-600">Loading blog content...</p>
+                        <p className="mt-4 text-gray-600">
+                            {isRetrying ? 'Retrying...' : 'Loading blog content...'}
+                        </p>
                     </motion.div>
                 )}
 
-                {error && (
+                {/* Enhanced error display with retry button */}
+                {error && !loading && (
                     <motion.div
                         key="error"
                         initial={{ opacity: 0, y: 20 }}
@@ -105,12 +161,24 @@ const Blog = () => {
                     >
                         <h3 className="font-bold text-lg mb-2">Error</h3>
                         <p>{error}</p>
-                        <p className="mt-4">
-                            Please try again later or select a different topic.
-                        </p>
+                        <div className="mt-4 flex space-x-4">
+                            <button
+                                onClick={handleRetry}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                Try Again
+                            </button>
+                            <button
+                                onClick={() => handleGenreChange('all')}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                                Reset to All Topics
+                            </button>
+                        </div>
                     </motion.div>
                 )}
 
+                {/* Blog content display - unchanged */}
                 {blog && !loading && !error && (
                     <motion.article
                         key={blog.id || 'blog-content'}
