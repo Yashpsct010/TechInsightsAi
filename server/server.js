@@ -3,66 +3,80 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const blogRoutes = require("./routes/blogRoutes");
-const setupCronJobs = require("./cron/blogGenerator");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// More permissive CORS setup
+// CORS setup
 app.use(cors());
+app.use(express.json({ limit: "10mb" })); // Limit payload size
 
-// Optional: For specific CORS needs, you can set up a custom middleware
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return res.status(204).send();
-  }
-  next();
+// Simple error handler middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({
+    error: "Server error occurred",
+    message:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Internal server error",
+  });
 });
 
-app.use(express.json());
-
-// Function to connect to MongoDB
+// Function to connect to MongoDB - with more error handling
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("MongoDB connected");
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000, // Timeout after 5s
+        socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      });
+      console.log("MongoDB connected");
+    } else {
+      console.log("MongoDB already connected");
+    }
   } catch (err) {
     console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit process if DB connection fails
+    throw err; // Re-throw for serverless handler
   }
 };
 
-// Define an async function to start the server
-const startServer = async () => {
-  await connectDB();
+// Define routes
+app.use("/api/blogs", blogRoutes);
 
-  // Routes
-  app.use("/api/blogs", blogRoutes);
+// Health check route
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
-  // Health check route
-  app.get("/health", (req, res) => {
-    res.json({ status: "ok" });
+// Root route
+app.get("/", (req, res) => res.send("Backend is running!"));
+
+// For serverless environments like Vercel
+if (process.env.VERCEL) {
+  // Export the app for serverless use
+  module.exports = app;
+} else {
+  // Traditional server startup for local development
+  const startServer = async () => {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      // Only run cron jobs in traditional environment
+      if (!process.env.VERCEL) {
+        const setupCronJobs = require("./cron/blogGenerator");
+        setupCronJobs();
+      }
+    });
+  };
+  startServer().catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
   });
+}
 
-  // Root route
-  app.get("/", (req, res) => res.send("Backend is running!"));
-
-  // Start server
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-
-    // Setup cron jobs after server starts
-    setupCronJobs();
-  });
-};
-
-// Start the application
-startServer();
+// Always ensure DB connection for serverless
+connectDB().catch((err) => {
+  console.error("Failed to connect to database in serverless mode:", err);
+  // Don't exit process in serverless environment
+});
