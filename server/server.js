@@ -37,7 +37,20 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: "10mb" })); // Limit payload size
+// Set request timeout limit
+app.use((req, res, next) => {
+  // Set timeout for all requests to prevent hanging
+  req.setTimeout(5000);
+  res.setTimeout(8000, () => {
+    console.log("Request timeout occurred");
+    if (!res.headersSent) {
+      return res.status(504).json({ error: "Request timeout" });
+    }
+  });
+  next();
+});
+
+app.use(express.json({ limit: "1mb" })); // Reduced payload limit for faster processing
 
 // Simple error handler middleware
 app.use((err, req, res, next) => {
@@ -51,34 +64,54 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Function to connect to MongoDB - with more error handling
+// MongoDB connection optimization
+let cachedDb = null;
 const connectDB = async () => {
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    console.log("Using cached database connection");
+    return;
+  }
+
   try {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000, // Timeout after 5s
-        socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      });
-      console.log("MongoDB connected");
-    } else {
-      console.log("MongoDB already connected");
-    }
+    const options = {
+      serverSelectionTimeoutMS: 3000, // Reduced timeout
+      socketTimeoutMS: 30000, // Reduced timeout
+      connectTimeoutMS: 5000,
+      maxPoolSize: 10, // Limit connections for serverless
+      minPoolSize: 0, // Allow all connections to close when idle
+    };
+
+    await mongoose.connect(process.env.MONGODB_URI, options);
+    cachedDb = mongoose.connection.db;
+    console.log("MongoDB connected");
   } catch (err) {
     console.error("MongoDB connection error:", err);
-    throw err; // Re-throw for serverless handler
+    throw err;
   }
 };
 
-// Define routes - ensure the path prefix matches frontend requests
-app.use("/api/blogs", blogRoutes);
+// Define routes with fast timeouts
+app.use(
+  "/api/blogs",
+  (req, res, next) => {
+    // Add timeout protection for blog routes
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        return res.status(504).json({ error: "Blog API timeout" });
+      }
+    }, 8000);
 
-// Health check route
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
+    res.on("finish", () => clearTimeout(timeout));
+    next();
+  },
+  blogRoutes
+);
 
-// Root route
-app.get("/", (req, res) => res.send("Backend is running!"));
+// Health check route - simplified
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
+// Root route - simplified
+app.get("/", (req, res) => res.send("Backend running"));
 
 // Handle 404 errors for any other routes
 app.use((req, res) => {
@@ -91,6 +124,9 @@ app.use((req, res) => {
 
 // For serverless environments like Vercel
 if (process.env.VERCEL) {
+  // Connect to DB when module loads for faster cold starts
+  connectDB().catch(console.error);
+
   // Export the app for serverless use
   module.exports = app;
 } else {

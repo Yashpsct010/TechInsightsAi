@@ -5,11 +5,23 @@
             "src": "server.js",
             "use": "@vercel/node",
             "config": {
-                "maxDuration": 10
+                "maxDuration": 10,
+                "memory": 1024
             }
         }
     ],
     "routes": [
+        {
+            "src": "/api/blogs/latest",
+            "dest": "/server.js",
+            "headers": {
+                "Access-Control-Allow-Origin": "https://techinsightsai.vercel.app",
+                "Access-Control-Allow-Methods": "GET,OPTIONS",
+                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
+                "Access-Control-Allow-Credentials": "true",
+                "Cache-Control": "s-maxage=300, stale-while-revalidate=60"
+            }
+        },
         {
             "src": "/api/(.*)",
             "dest": "/server.js",
@@ -22,13 +34,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/server.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://techinsightsai.vercel.app",
-                "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "dest": "/server.js"
         }
     ]
 }
