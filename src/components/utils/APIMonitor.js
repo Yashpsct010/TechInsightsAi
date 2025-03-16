@@ -28,18 +28,19 @@ class APIMonitor {
 
     const stats = this.endpoints.get(endpoint);
     stats.totalRequests++;
-    
+
     if (success) {
       stats.successfulRequests++;
       stats.consecutiveFailures = 0;
-      stats.avgResponseTime = 
-        (stats.avgResponseTime * (stats.totalRequests - 1) + responseTime) / stats.totalRequests;
+      stats.avgResponseTime =
+        (stats.avgResponseTime * (stats.totalRequests - 1) + responseTime) /
+        stats.totalRequests;
     } else {
       stats.failedRequests++;
       stats.consecutiveFailures++;
     }
-    
-    stats.lastStatus = success ? 'success' : 'failure';
+
+    stats.lastStatus = success ? "success" : "failure";
   }
 
   /**
@@ -50,8 +51,11 @@ class APIMonitor {
   getBackoffTime(endpoint) {
     const stats = this.endpoints.get(endpoint);
     if (!stats) return 0;
-    
-    const index = Math.min(stats.consecutiveFailures - 1, this.backoffTimes.length - 1);
+
+    const index = Math.min(
+      stats.consecutiveFailures - 1,
+      this.backoffTimes.length - 1
+    );
     return index >= 0 ? this.backoffTimes[index] : 0;
   }
 
@@ -63,7 +67,7 @@ class APIMonitor {
   isEndpointUnstable(endpoint) {
     const stats = this.endpoints.get(endpoint);
     if (!stats) return false;
-    
+
     return stats.consecutiveFailures >= 3;
   }
 

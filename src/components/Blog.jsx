@@ -8,45 +8,45 @@ const Blog = () => {
     const [error, setError] = useState(null);
     const [selectedGenre, setSelectedGenre] = useState(null);
     const [isRetrying, setIsRetrying] = useState(false);
-    
+
     // Debounce genre changes to prevent rapid API requests
     const debouncedFetchBlog = useCallback((genre) => {
         let timerId = null;
-        
+
         return (genreValue) => {
             if (timerId) {
                 clearTimeout(timerId);
             }
-            
+
             // Small delay to prevent multiple rapid requests
             timerId = setTimeout(() => {
                 loadBlog(genreValue);
             }, 300);
-            
+
             return () => {
                 if (timerId) clearTimeout(timerId);
             };
         };
     }, []);
-    
+
     // Use useCallback to prevent recreating this function on every render
     const loadBlog = useCallback(async (genreValue) => {
         try {
             setLoading(true);
             setError(null);
             setIsRetrying(false);
-            
+
             console.log(`Loading blog for genre: ${genreValue || 'all'}`);
             const blogData = await fetchLatestBlog(genreValue);
-            
+
             if (!blogData) {
                 throw new Error("No blog data returned from server");
             }
-            
+
             setBlog(blogData);
         } catch (err) {
             console.error("Failed to load blog:", err);
-            
+
             // More user-friendly error message
             const errorMessage = err.message || "An unexpected error occurred";
             setError(errorMessage);
@@ -109,11 +109,10 @@ const Blog = () => {
                         {genres.map((genre, index) => (
                             <motion.button
                                 key={genre.id}
-                                className={`px-4 py-2 rounded-md border transition-colors ${
-                                    selectedGenre === (genre.id === 'all' ? null : genre.id)
-                                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
+                                className={`px-4 py-2 rounded-md border transition-colors ${selectedGenre === (genre.id === 'all' ? null : genre.id)
+                                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    }`}
                                 onClick={() => handleGenreChange(genre.id)}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}

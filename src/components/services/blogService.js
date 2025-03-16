@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 /**
  * Service to fetch blog posts from the backend API
@@ -9,8 +9,8 @@ const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
   timeout: 15000, // 15 seconds timeout
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 // Keep track of pending requests to cancel if needed
@@ -23,40 +23,42 @@ const pendingRequests = new Map();
  */
 export async function fetchLatestBlog(genre = null) {
   // Cancel any existing request for the same endpoint
-  if (pendingRequests.has('latest')) {
-    pendingRequests.get('latest').cancel('Request superseded');
+  if (pendingRequests.has("latest")) {
+    pendingRequests.get("latest").cancel("Request superseded");
   }
-  
+
   // Create new cancel token
   const source = axios.CancelToken.source();
-  pendingRequests.set('latest', source);
-  
+  pendingRequests.set("latest", source);
+
   try {
     const params = genre ? { genre } : {};
-    
+
     console.log(`Fetching latest blog with params:`, params);
-    
-    const response = await apiClient.get('/blogs/latest', {
+
+    const response = await apiClient.get("/blogs/latest", {
       params,
-      cancelToken: source.token
+      cancelToken: source.token,
     });
-    
+
     return response.data.blog;
   } catch (error) {
     // Don't throw for canceled requests
     if (axios.isCancel(error)) {
-      console.log('Request canceled:', error.message);
-      throw new Error('Request was canceled');
+      console.log("Request canceled:", error.message);
+      throw new Error("Request was canceled");
     }
-    
-    console.error('Error fetching blog content:', error);
-    
+
+    console.error("Error fetching blog content:", error);
+
     // Enhanced error message
     const status = error.response?.status;
     const message = error.response?.data?.error || error.message;
-    
+
     if (status === 504) {
-      throw new Error(`The server took too long to respond (Timeout). Please try again later.`);
+      throw new Error(
+        `The server took too long to respond (Timeout). Please try again later.`
+      );
     } else if (status === 500) {
       throw new Error(`Server error occurred. The team has been notified.`);
     } else {
@@ -64,7 +66,7 @@ export async function fetchLatestBlog(genre = null) {
     }
   } finally {
     // Remove from pending requests
-    pendingRequests.delete('latest');
+    pendingRequests.delete("latest");
   }
 }
 
