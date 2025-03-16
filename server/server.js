@@ -37,19 +37,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Set request timeout limit
-app.use((req, res, next) => {
-  // Set timeout for all requests to prevent hanging
-  req.setTimeout(5000);
-  res.setTimeout(8000, () => {
-    console.log("Request timeout occurred");
-    if (!res.headersSent) {
-      return res.status(504).json({ error: "Request timeout" });
-    }
-  });
-  next();
-});
-
 app.use(express.json({ limit: "1mb" })); // Reduced payload limit for faster processing
 
 // Simple error handler middleware
@@ -91,21 +78,7 @@ const connectDB = async () => {
 };
 
 // Define routes with fast timeouts
-app.use(
-  "/api/blogs",
-  (req, res, next) => {
-    // Add timeout protection for blog routes
-    const timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        return res.status(504).json({ error: "Blog API timeout" });
-      }
-    }, 8000);
-
-    res.on("finish", () => clearTimeout(timeout));
-    next();
-  },
-  blogRoutes
-);
+app.use("/api/blogs",blogRoutes);
 
 // Health check route - simplified
 app.get("/health", (req, res) => res.json({ status: "ok" }));
@@ -142,10 +115,8 @@ if (process.env.VERCEL) {
       }
     });
   };
-  startServer().catch((err) => {
-    console.error("Failed to start server:", err);
-    process.exit(1);
-  });
+
+  startServer().catch(console.error);
 }
 
 // Always ensure DB connection for serverless
