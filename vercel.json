@@ -10,14 +10,12 @@
         { 
             "src": "/(.*)", 
             "dest": "/index.html" 
-        },
+        }
+    ],
+    "crons": [
         {
-            "crons": [
-              {
-                "path": "/api/blogs/generate",
-                "schedule": "0 */3 * * *"
-              }
-            ]
-          }
+            "path": "/api/blogs/generate",
+            "schedule": "0 */3 * * *"
+        }
     ]
 }
