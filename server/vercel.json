@@ -5,7 +5,7 @@
             "src": "server.js",
             "use": "@vercel/node",
             "config": {
-                "maxDuration": 60,
+                "maxDuration": 300,
                 "memory": 1024
             }
         }
