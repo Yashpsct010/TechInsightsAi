@@ -18,7 +18,7 @@ module.exports = function setupCronJobs() {
         {
           headers: {
             // Include any auth headers needed
-            Authorization: `Bearer ${process.env.CRON_API_KEY}`,
+            Authorization: `Bearer ${process.env.CRON_SECRET}`,
           },
         }
       );

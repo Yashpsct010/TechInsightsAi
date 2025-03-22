@@ -196,6 +196,7 @@ async function generateNewBlog(genre = null) {
       requestBody,
       {
         headers: { "Content-Type": "application/json" },
+        timeout: 25000, // 25 second timeout
       }
     );
 
@@ -236,6 +237,7 @@ async function generateNewBlog(genre = null) {
             headers: {
               Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 
@@ -327,13 +329,30 @@ exports.getAllBlogs = async (req, res) => {
 exports.generateBlog = async (req, res) => {
   try {
     const genre = req.body.genre || null;
-    const blog = await generateNewBlog(genre);
 
-    res.json({
+    // Set timeouts for external API calls
+    const GeminiTimeout = 25000; // 25 seconds
+    const UnsplashTimeout = 10000; // 10 seconds
+
+    // Send immediate response to prevent timeout
+    res.status(202).json({
       success: true,
-      blog,
+      message: "Blog generation started",
     });
+
+    // Continue processing after response is sent
+    generateNewBlog(genre)
+      .then((blog) => {
+        console.log("Blog generated successfully in background:", blog.title);
+      })
+      .catch((error) => {
+        console.error("Background blog generation failed:", error);
+      });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Failed to start blog generation:", error);
+    // If we haven't sent a response yet
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
   }
 };
