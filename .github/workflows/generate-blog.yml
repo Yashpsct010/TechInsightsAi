@@ -1,0 +1,20 @@
+name: Generate Blog Content
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Run daily at midnight UTC
+  workflow_dispatch: # Allow manual triggering for testing
+
+jobs:
+  generate-blog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger blog generation API
+        run: |
+          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -d "{}"
+
+      - name: Log completion
+        run: echo "Blog generation triggered at $(date)"

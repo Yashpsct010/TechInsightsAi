@@ -2,13 +2,24 @@ const cron = require("node-cron");
 const axios = require("axios");
 
 /**
- * Cron job to generate a new blog every 3 hours
- * Runs at minutes 0 of every 3rd hour
+ * Cron job to generate a new blog - only used in development
+ * In production, this is handled by GitHub Actions
  */
 module.exports = function setupCronJobs() {
-  // Schedule: "0 */3 * * *" = At minute 0 of every 3rd hour
-  cron.schedule("0 */3 * * *", async () => {
-    console.log("Running scheduled blog generation:", new Date().toISOString());
+  // Only run cron in development
+  if (process.env.NODE_ENV === "production") {
+    console.log(
+      "Skipping cron job setup in production (handled by GitHub Actions)"
+    );
+    return;
+  }
+
+  // Schedule: "0 0 * * *" = once every day at midnight
+  cron.schedule("0 0 * * *", async () => {
+    console.log(
+      "Running scheduled blog generation (development):",
+      new Date().toISOString()
+    );
 
     try {
       // Call our own API to generate a new blog
@@ -17,7 +28,6 @@ module.exports = function setupCronJobs() {
         {},
         {
           headers: {
-            // Include any auth headers needed
             Authorization: `Bearer ${process.env.CRON_SECRET}`,
           },
         }
@@ -29,5 +39,5 @@ module.exports = function setupCronJobs() {
     }
   });
 
-  console.log("Blog generator cron job scheduled");
+  console.log("Development blog generator cron job scheduled");
 };
