@@ -2,7 +2,7 @@ const Blog = require("../models/Blog");
 const axios = require("axios");
 
 // Time window for caching (3 hours in milliseconds)
-const CACHE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const CACHE_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 // Detect blog genre based on content
 function detectBlogGenre(content) {

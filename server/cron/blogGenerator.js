@@ -14,8 +14,8 @@ module.exports = function setupCronJobs() {
     return;
   }
 
-  // Schedule: "0 0 * * *" = once every day at midnight
-  cron.schedule("0 0 * * *", async () => {
+  // Schedule: "0 */3 * * *" = every 3 hours
+  cron.schedule("0 */3 * * *", async () => {
     console.log(
       "Running scheduled blog generation (development):",
       new Date().toISOString()
