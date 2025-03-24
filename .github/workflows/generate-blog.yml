@@ -9,57 +9,73 @@ jobs:
   generate-blog:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate default/general blog post
+      - name: Set up environment
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d "{}"
+          echo "Setting up blog generation environment"
+          API_URL="https://techinsightsai-backend.vercel.app/api/blogs/generate"
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          CONTENT_TYPE="Content-Type: application/json"
+          echo "API_URL=$API_URL" >> $GITHUB_ENV
+          echo "AUTH_HEADER=$AUTH_HEADER" >> $GITHUB_ENV
+          echo "CONTENT_TYPE=$CONTENT_TYPE" >> $GITHUB_ENV
+
+      - name: Generate general blog post
+        run: |
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "General blog post generation triggered"
-          sleep 5
+          sleep 10
 
       - name: Generate AI/ML blog post
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d '{"genre": "ai-ml"}'
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{"genre":"ai-ml"}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "AI/ML blog post generation triggered"
-          sleep 5
+          sleep 10
 
       - name: Generate Cybersecurity blog post
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d '{"genre": "cybersecurity"}'
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{"genre":"cybersecurity"}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "Cybersecurity blog post generation triggered" 
-          sleep 5
+          sleep 10
 
       - name: Generate Coding blog post
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d '{"genre": "coding"}'
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{"genre":"coding"}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "Coding blog post generation triggered"
-          sleep 5
+          sleep 10
 
       - name: Generate Emerging Tech blog post
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d '{"genre": "emerging-tech"}'
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{"genre":"emerging-tech"}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "Emerging Tech blog post generation triggered"
-          sleep 5
+          sleep 10
 
       - name: Generate Tech News blog post
         run: |
-          curl -X POST https://techinsightsai-backend.vercel.app/api/blogs/generate \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -d '{"genre": "tech-news"}'
+          curl -X POST "$API_URL" \
+            -H "$AUTH_HEADER" \
+            -H "$CONTENT_TYPE" \
+            -d '{"genre":"tech-news"}' \
+            -s -o /dev/null -w "Status code: %{http_code}\n"
           echo "Tech News blog post generation triggered"
 
       - name: Log completion
