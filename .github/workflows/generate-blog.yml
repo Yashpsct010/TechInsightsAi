@@ -13,60 +13,42 @@ jobs:
         run: |
           echo "Starting blog generation process..."
 
-          # Base URL and auth token
-          API_URL="https://techinsightsai-backend.vercel.app/api/blogs/generate"
+          # Function to call API and handle potential errors
+          generate_blog() {
+            local genre=$1
+            local genre_display=$2
+            
+            echo "Generating ${genre_display} blog..."
+            local response=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"genre\":\"${genre}\"}")
+            
+            echo "${genre_display} blog response: $response"
+            
+            # Check if response contains an error
+            if [[ $response == *"error"* ]]; then
+              echo "WARNING: Possible error in ${genre_display} blog generation"
+            fi
+            
+            # Much longer delay between requests - 60 seconds
+            sleep 60
+          }
 
-          # Generate general blog
+          # Generate general blog (null genre)
           echo "Generating general blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
+          RESPONSE=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{}')
           echo "General blog response: $RESPONSE"
-          sleep 20
+          sleep 60
 
-          # Generate AI/ML blog
-          echo "Generating AI/ML blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"genre":"ai-ml"}')
-          echo "AI/ML blog response: $RESPONSE"
-          sleep 20
-
-          # Generate Cybersecurity blog
-          echo "Generating Cybersecurity blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"genre":"cybersecurity"}')
-          echo "Cybersecurity blog response: $RESPONSE"
-          sleep 20
-
-          # Generate Coding blog
-          echo "Generating Coding blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"genre":"coding"}')
-          echo "Coding blog response: $RESPONSE"
-          sleep 20
-
-          # Generate Emerging Tech blog
-          echo "Generating Emerging Tech blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"genre":"emerging-tech"}')
-          echo "Emerging Tech blog response: $RESPONSE"
-          sleep 20
-
-          # Generate Tech News blog
-          echo "Generating Tech News blog..."
-          RESPONSE=$(curl -s -X POST "$API_URL" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"genre":"tech-news"}')
-          echo "Tech News blog response: $RESPONSE"
+          # Generate specific genre blogs
+          generate_blog "ai-ml" "AI/ML"
+          generate_blog "cybersecurity" "Cybersecurity"
+          generate_blog "coding" "Coding"
+          generate_blog "emerging-tech" "Emerging Tech"
+          generate_blog "tech-news" "Tech News"
 
           echo "All blog generation requests completed at $(date)"

@@ -329,25 +329,37 @@ exports.getAllBlogs = async (req, res) => {
 exports.generateBlog = async (req, res) => {
   try {
     const genre = req.body.genre || null;
+    const requestId = Math.random().toString(36).substring(2, 10); // Generate unique ID for tracking
 
-    // Set timeouts for external API calls
-    const GeminiTimeout = 25000; // 25 seconds
-    const UnsplashTimeout = 10000; // 10 seconds
+    console.log(
+      `[${requestId}] Blog generation started for genre: ${genre || "general"}`
+    );
 
     // Send immediate response to prevent timeout
     res.status(202).json({
       success: true,
       message: "Blog generation started",
+      requestId: requestId,
+      genre: genre || "general",
     });
 
     // Continue processing after response is sent
-    generateNewBlog(genre)
-      .then((blog) => {
-        console.log("Blog generated successfully in background:", blog.title);
-      })
-      .catch((error) => {
-        console.error("Background blog generation failed:", error);
-      });
+    setTimeout(() => {
+      generateNewBlog(genre)
+        .then((blog) => {
+          console.log(
+            `[${requestId}] Blog generated successfully: "${blog.title}" (${blog.genre})`
+          );
+        })
+        .catch((error) => {
+          console.error(
+            `[${requestId}] Background blog generation failed for genre ${
+              genre || "general"
+            }:`,
+            error
+          );
+        });
+    }, 500); // Small delay before starting actual generation
   } catch (error) {
     console.error("Failed to start blog generation:", error);
     // If we haven't sent a response yet
