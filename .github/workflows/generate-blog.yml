@@ -9,74 +9,64 @@ jobs:
   generate-blog:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up environment
+      - name: Generate blogs for all genres
         run: |
-          echo "Setting up blog generation environment"
+          echo "Starting blog generation process..."
+
+          # Base URL and auth token
           API_URL="https://techinsightsai-backend.vercel.app/api/blogs/generate"
-          AUTH_HEADER="Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-          CONTENT_TYPE="Content-Type: application/json"
-          echo "API_URL=$API_URL" >> $GITHUB_ENV
-          echo "AUTH_HEADER=$AUTH_HEADER" >> $GITHUB_ENV
-          echo "CONTENT_TYPE=$CONTENT_TYPE" >> $GITHUB_ENV
 
-      - name: Generate general blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "General blog post generation triggered"
-          sleep 10
+          # Generate general blog
+          echo "Generating general blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "General blog response: $RESPONSE"
+          sleep 20
 
-      - name: Generate AI/ML blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{"genre":"ai-ml"}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "AI/ML blog post generation triggered"
-          sleep 10
+          # Generate AI/ML blog
+          echo "Generating AI/ML blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"ai-ml"}')
+          echo "AI/ML blog response: $RESPONSE"
+          sleep 20
 
-      - name: Generate Cybersecurity blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{"genre":"cybersecurity"}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "Cybersecurity blog post generation triggered" 
-          sleep 10
+          # Generate Cybersecurity blog
+          echo "Generating Cybersecurity blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"cybersecurity"}')
+          echo "Cybersecurity blog response: $RESPONSE"
+          sleep 20
 
-      - name: Generate Coding blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{"genre":"coding"}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "Coding blog post generation triggered"
-          sleep 10
+          # Generate Coding blog
+          echo "Generating Coding blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"coding"}')
+          echo "Coding blog response: $RESPONSE"
+          sleep 20
 
-      - name: Generate Emerging Tech blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{"genre":"emerging-tech"}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "Emerging Tech blog post generation triggered"
-          sleep 10
+          # Generate Emerging Tech blog
+          echo "Generating Emerging Tech blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"emerging-tech"}')
+          echo "Emerging Tech blog response: $RESPONSE"
+          sleep 20
 
-      - name: Generate Tech News blog post
-        run: |
-          curl -X POST "$API_URL" \
-            -H "$AUTH_HEADER" \
-            -H "$CONTENT_TYPE" \
-            -d '{"genre":"tech-news"}' \
-            -s -o /dev/null -w "Status code: %{http_code}\n"
-          echo "Tech News blog post generation triggered"
+          # Generate Tech News blog
+          echo "Generating Tech News blog..."
+          RESPONSE=$(curl -s -X POST "$API_URL" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"tech-news"}')
+          echo "Tech News blog response: $RESPONSE"
 
-      - name: Log completion
-        run: echo "All blog posts generation triggered at $(date)"
+          echo "All blog generation requests completed at $(date)"
