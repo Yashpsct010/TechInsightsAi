@@ -2,53 +2,87 @@ name: Generate Blog Content
 
 on:
   schedule:
-    - cron: "0 */3 * * *" # Run every 3 hours
+    - cron: "0 */1 * * *" # Run every 1 hours
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
-  generate-blog:
+  general-blog:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate blogs for all genres
+      - name: Generate general blog
         run: |
-          echo "Starting blog generation process..."
-
-          # Function to call API and handle potential errors
-          generate_blog() {
-            local genre=$1
-            local genre_display=$2
-            
-            echo "Generating ${genre_display} blog..."
-            local response=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
-              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"genre\":\"${genre}\"}")
-            
-            echo "${genre_display} blog response: $response"
-            
-            # Check if response contains an error
-            if [[ $response == *"error"* ]]; then
-              echo "WARNING: Possible error in ${genre_display} blog generation"
-            fi
-            
-            # Much longer delay between requests - 60 seconds
-            sleep 60
-          }
-
-          # Generate general blog (null genre)
-          echo "Generating general blog..."
-          RESPONSE=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            -d '{}')
-          echo "General blog response: $RESPONSE"
-          sleep 60
+            -d '{}'
+          echo "General blog generation triggered"
 
-          # Generate specific genre blogs
-          generate_blog "ai-ml" "AI/ML"
-          generate_blog "cybersecurity" "Cybersecurity"
-          generate_blog "coding" "Coding"
-          generate_blog "emerging-tech" "Emerging Tech"
-          generate_blog "tech-news" "Tech News"
+  ai-ml-blog:
+    runs-on: ubuntu-latest
+    needs: general-blog
+    steps:
+      - name: Wait for previous job
+        run: sleep 120
+      - name: Generate AI/ML blog
+        run: |
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"ai-ml"}'
+          echo "AI/ML blog generation triggered"
 
-          echo "All blog generation requests completed at $(date)"
+  cybersecurity-blog:
+    runs-on: ubuntu-latest
+    needs: ai-ml-blog
+    steps:
+      - name: Wait for previous job
+        run: sleep 120
+      - name: Generate Cybersecurity blog
+        run: |
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"cybersecurity"}'
+          echo "Cybersecurity blog generation triggered"
+
+  coding-blog:
+    runs-on: ubuntu-latest
+    needs: cybersecurity-blog
+    steps:
+      - name: Wait for previous job
+        run: sleep 120
+      - name: Generate Coding blog
+        run: |
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"coding"}'
+          echo "Coding blog generation triggered"
+
+  emerging-tech-blog:
+    runs-on: ubuntu-latest
+    needs: coding-blog
+    steps:
+      - name: Wait for previous job
+        run: sleep 120
+      - name: Generate Emerging Tech blog
+        run: |
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"emerging-tech"}'
+          echo "Emerging Tech blog generation triggered"
+
+  tech-news-blog:
+    runs-on: ubuntu-latest
+    needs: emerging-tech-blog
+    steps:
+      - name: Wait for previous job
+        run: sleep 120
+      - name: Generate Tech News blog
+        run: |
+          curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"genre":"tech-news"}'
+          echo "Tech News blog generation triggered"

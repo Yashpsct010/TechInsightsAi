@@ -1,8 +1,8 @@
 const Blog = require("../models/Blog");
 const axios = require("axios");
 
-// Time window for caching (3 hours in milliseconds)
-const CACHE_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Cache window in milliseconds
+const CACHE_WINDOW_MS = 60 * 60 * 1000;
 
 // Detect blog genre based on content
 function detectBlogGenre(content) {
@@ -329,7 +329,7 @@ exports.getAllBlogs = async (req, res) => {
 exports.generateBlog = async (req, res) => {
   try {
     const genre = req.body.genre || null;
-    const requestId = Math.random().toString(36).substring(2, 10); // Generate unique ID for tracking
+    const requestId = Math.random().toString(36).substring(2, 10);
 
     console.log(
       `[${requestId}] Blog generation started for genre: ${genre || "general"}`
@@ -343,26 +343,43 @@ exports.generateBlog = async (req, res) => {
       genre: genre || "general",
     });
 
-    // Continue processing after response is sent
-    setTimeout(() => {
-      generateNewBlog(genre)
-        .then((blog) => {
+    // Use a more resilient approach for background processing
+    process.nextTick(async () => {
+      try {
+        // Check if we already have a recent blog of this genre
+        const existingBlog = await Blog.findOne(
+          genre ? { genre: genre } : {}
+        ).sort({ createdAt: -1 });
+
+        const now = Date.now();
+        const isRecent =
+          existingBlog &&
+          now - existingBlog.createdAt.getTime() < 60 * 60 * 1000; // 1 hour
+
+        if (isRecent) {
           console.log(
-            `[${requestId}] Blog generated successfully: "${blog.title}" (${blog.genre})`
-          );
-        })
-        .catch((error) => {
-          console.error(
-            `[${requestId}] Background blog generation failed for genre ${
+            `[${requestId}] Recent blog already exists for ${
               genre || "general"
-            }:`,
-            error
+            }, skipping generation`
           );
-        });
-    }, 500); // Small delay before starting actual generation
+          return;
+        }
+
+        const blog = await generateNewBlog(genre);
+        console.log(
+          `[${requestId}] Blog generated successfully: "${blog.title}" (${blog.genre})`
+        );
+      } catch (error) {
+        console.error(
+          `[${requestId}] Background blog generation failed for genre ${
+            genre || "general"
+          }:`,
+          error.message
+        );
+      }
+    });
   } catch (error) {
     console.error("Failed to start blog generation:", error);
-    // If we haven't sent a response yet
     if (!res.headersSent) {
       res.status(500).json({ error: error.message });
     }
