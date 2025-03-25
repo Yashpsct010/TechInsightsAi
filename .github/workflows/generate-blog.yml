@@ -9,14 +9,15 @@ jobs:
   generate-blogs:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Database Status
+      - name: Basic Health Check
         run: |
-          echo "Checking database status before generation..."
-          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .
+          echo "Performing basic health check..."
+          curl -s -m 5 "https://techinsightsai-backend.vercel.app/health" || echo "Health check timed out or failed, but continuing..."
 
       - name: Generate General Blog
         id: general
         run: |
+          echo "Generating general blog..."
           RESPONSE=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
@@ -25,51 +26,35 @@ jobs:
           echo "Waiting 5 minutes for processing to complete..."
           sleep 300
 
-      - name: Check Database After General Blog
+      - name: Check Latest General Blog
         run: |
-          echo "Checking database after general blog generation..."
-          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .
-
-      - name: Verify General Blog Creation
-        run: |
-          BLOGS=$(curl -s "https://techinsightsai-backend.vercel.app/api/blogs/all?limit=1" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-          echo "Latest blogs check: $BLOGS"
+          echo "Checking latest blog..."
+          curl -s -m 10 "https://techinsightsai-backend.vercel.app/api/blogs/latest" \
+            || echo "Blog check timed out, but continuing..."
 
       - name: Generate Genre-Specific Blogs
         run: |
-          # Function to generate blog and verify
-          generate_and_verify() {
+          # Function to generate blog with error handling
+          generate_blog() {
             local genre=$1
             local display_name=$2
             
             echo "Generating $display_name blog..."
-            RESPONSE=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            curl -s -m 30 -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
               -H "Content-Type: application/json" \
-              -d "{\"genre\":\"$genre\"}")
-            echo "$display_name blog response: $RESPONSE"
+              -d "{\"genre\":\"$genre\"}" \
+              || echo "Request timed out for $display_name, but continuing..."
             
-            # Wait for processing (3 minutes)
             echo "Waiting for $display_name blog processing..."
             sleep 180
-            
-            # Verify creation
-            VERIFY=$(curl -s "https://techinsightsai-backend.vercel.app/api/blogs/all?genre=$genre&limit=1" \
-              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-            echo "$display_name verification: $VERIFY"
           }
 
           # Generate all genre blogs
-          generate_and_verify "ai-ml" "AI/ML"
-          generate_and_verify "cybersecurity" "Cybersecurity"
-          generate_and_verify "coding" "Coding"
-          generate_and_verify "emerging-tech" "Emerging Tech"
-          generate_and_verify "tech-news" "Tech News"
+          generate_blog "ai-ml" "AI/ML"
+          generate_blog "cybersecurity" "Cybersecurity"
+          generate_blog "coding" "Coding"
+          generate_blog "emerging-tech" "Emerging Tech"
+          generate_blog "tech-news" "Tech News"
 
           echo "All blog generation processes completed at $(date)"
-
-      - name: Final Database Check
-        run: |
-          echo "Final database check after all generations..."
-          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .

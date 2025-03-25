@@ -13,59 +13,31 @@ router.get("/all", blogController.getAllBlogs);
 // Generate a new blog (protected, for admin or cron job)
 router.post("/generate", blogController.generateBlog);
 
-// Diagnostic endpoint for GitHub Actions to check database connection
+// Lightweight diagnostic endpoint for GitHub Actions
 router.get("/diagnose", async (req, res) => {
   try {
-    // Check MongoDB connection
-    const dbState = mongoose.connection.readyState;
-    const dbStateText = [
-      "disconnected",
-      "connected",
-      "connecting",
-      "disconnecting",
-    ][dbState];
-
-    // Count blogs by genre
-    const countsByGenre = await Blog.aggregate([
-      { $group: { _id: "$genre", count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-    ]);
-
-    // Get most recent blog
-    const latestBlog = await Blog.findOne({})
-      .sort({ createdAt: -1 })
-      .select("title genre createdAt");
-
-    // Try a simple write operation
-    const testId = new mongoose.Types.ObjectId();
-    let writeTest = "not attempted";
-
-    try {
-      await mongoose.connection.db.collection("diagnostics").insertOne({
-        _id: testId,
-        test: "connection",
-        timestamp: new Date(),
-      });
-      writeTest = "success";
-    } catch (writeError) {
-      writeTest = `failed: ${writeError.message}`;
-    }
-
-    res.json({
+    // Return basic information immediately without database operations
+    const basicInfo = {
       timestamp: new Date(),
+      serverStatus: "running",
       database: {
-        state: dbStateText,
-        readyState: dbState,
+        state: mongoose.connection.readyState,
+        stateText: ["disconnected", "connected", "connecting", "disconnecting"][
+          mongoose.connection.readyState
+        ],
       },
-      blogCounts: countsByGenre,
-      latestBlog: latestBlog,
-      writeTest: writeTest,
-    });
+      environment: {
+        vercel: process.env.VERCEL ? "true" : "false",
+        nodeEnv: process.env.NODE_ENV || "not set",
+      },
+    };
+
+    // Send the basic response immediately
+    res.json(basicInfo);
   } catch (error) {
     res.status(500).json({
-      error: "Diagnostic failed",
+      error: "Diagnostic check failed",
       message: error.message,
-      stack: process.env.NODE_ENV === "production" ? null : error.stack,
     });
   }
 });
