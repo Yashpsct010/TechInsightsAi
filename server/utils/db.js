@@ -6,11 +6,13 @@ let connectionPromise = null;
 // Optimized connection function for serverless environments
 const connectToDatabase = async () => {
   if (isConnected) {
+    console.log("Using existing database connection");
     return;
   }
 
   // Reuse connection promise if connection is in progress
   if (connectionPromise) {
+    console.log("Waiting for in-progress connection...");
     await connectionPromise;
     return;
   }
@@ -23,18 +25,30 @@ const connectToDatabase = async () => {
       const uri = process.env.MONGODB_URI;
       console.log(`MongoDB URI format check: ${uri.substring(0, 20)}...`);
 
+      // Set mongoose options to reduce serverless issues
+      mongoose.set("strictQuery", false);
+
       await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 10000, // Increased from 5000
-        socketTimeoutMS: 45000, // Increased from 30000
-        connectTimeoutMS: 10000, // Increased from 5000
-        maxPoolSize: 5, // Reduced from 10 for serverless
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        maxPoolSize: 5,
         minPoolSize: 0,
         retryWrites: true,
-        w: "majority", // Added for more reliable writes
+        w: "majority",
+        keepAlive: true,
+        keepAliveInitialDelay: 300000,
       });
 
       isConnected = true;
       console.log("MongoDB successfully connected");
+
+      // Set up disconnection handler
+      mongoose.connection.on("disconnected", () => {
+        console.log("MongoDB disconnected");
+        isConnected = false;
+      });
+
       return true;
     } catch (error) {
       console.error(
@@ -43,7 +57,7 @@ const connectToDatabase = async () => {
       );
 
       if (retryCount < maxRetries) {
-        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        const delay = Math.pow(2, retryCount) * 1000;
         console.log(`Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         return connectWithRetry(retryCount + 1, maxRetries);
@@ -64,4 +78,14 @@ const connectToDatabase = async () => {
   }
 };
 
-module.exports = { connectToDatabase };
+// Ensure a connection is active or reconnect
+const ensureConnection = async () => {
+  if (!isConnected || mongoose.connection.readyState !== 1) {
+    console.log("Reconnecting to MongoDB...");
+    isConnected = false;
+    await connectToDatabase();
+  }
+  return isConnected;
+};
+
+module.exports = { connectToDatabase, ensureConnection };

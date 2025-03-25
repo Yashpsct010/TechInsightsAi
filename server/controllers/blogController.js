@@ -327,14 +327,15 @@ exports.getAllBlogs = async (req, res) => {
 
 // Generate a new blog on demand (for cron job or admin)
 exports.generateBlog = async (req, res) => {
+  const startTime = Date.now();
+  const genre = req.body.genre || null;
+  const requestId = Math.random().toString(36).substring(2, 10);
+
+  console.log(
+    `[${requestId}] Blog generation started for genre: ${genre || "general"}`
+  );
+
   try {
-    const genre = req.body.genre || null;
-    const requestId = Math.random().toString(36).substring(2, 10);
-
-    console.log(
-      `[${requestId}] Blog generation started for genre: ${genre || "general"}`
-    );
-
     // Send immediate response to prevent timeout
     res.status(202).json({
       success: true,
@@ -343,43 +344,46 @@ exports.generateBlog = async (req, res) => {
       genre: genre || "general",
     });
 
-    // Use a more resilient approach for background processing
-    process.nextTick(async () => {
-      try {
-        // Check if we already have a recent blog of this genre
-        const existingBlog = await Blog.findOne(
-          genre ? { genre: genre } : {}
-        ).sort({ createdAt: -1 });
+    // For Vercel serverless, we need to use a different approach than process.nextTick
+    try {
+      // Make sure we have a valid database connection
+      const { ensureConnection } = require("../utils/db");
+      await ensureConnection();
 
-        const now = Date.now();
-        const isRecent =
-          existingBlog &&
-          now - existingBlog.createdAt.getTime() < 60 * 60 * 1000; // 1 hour
+      // Check if we already have a recent blog of this genre (within 30 minutes)
+      const existingBlog = await Blog.findOne(
+        genre ? { genre: genre } : {}
+      ).sort({ createdAt: -1 });
 
-        if (isRecent) {
-          console.log(
-            `[${requestId}] Recent blog already exists for ${
-              genre || "general"
-            }, skipping generation`
-          );
-          return;
-        }
+      const now = Date.now();
+      const isRecent =
+        existingBlog && now - existingBlog.createdAt.getTime() < 30 * 60 * 1000;
 
-        const blog = await generateNewBlog(genre);
+      if (isRecent) {
         console.log(
-          `[${requestId}] Blog generated successfully: "${blog.title}" (${blog.genre})`
-        );
-      } catch (error) {
-        console.error(
-          `[${requestId}] Background blog generation failed for genre ${
+          `[${requestId}] Recent blog already exists for ${
             genre || "general"
-          }:`,
-          error.message
+          }, skipping generation`
         );
+        return;
       }
-    });
+
+      // Directly await blog generation rather than using process.nextTick
+      const blog = await generateNewBlog(genre);
+
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      console.log(
+        `[${requestId}] Blog "${blog.title}" (${blog.genre}) saved to database in ${elapsed}s`
+      );
+    } catch (error) {
+      console.error(
+        `[${requestId}] Blog generation failed for ${genre || "general"}:`,
+        error
+      );
+      console.error(`Stack trace: ${error.stack}`);
+    }
   } catch (error) {
-    console.error("Failed to start blog generation:", error);
+    console.error(`[${requestId}] Failed to start blog generation:`, error);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message });
     }

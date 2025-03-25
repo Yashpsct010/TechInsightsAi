@@ -9,6 +9,11 @@ jobs:
   generate-blogs:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Database Status
+        run: |
+          echo "Checking database status before generation..."
+          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .
+
       - name: Generate General Blog
         id: general
         run: |
@@ -17,9 +22,13 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}')
           echo "Response: $RESPONSE"
-          # Wait longer for backend processing
           echo "Waiting 5 minutes for processing to complete..."
           sleep 300
+
+      - name: Check Database After General Blog
+        run: |
+          echo "Checking database after general blog generation..."
+          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .
 
       - name: Verify General Blog Creation
         run: |
@@ -59,3 +68,8 @@ jobs:
           generate_and_verify "tech-news" "Tech News"
 
           echo "All blog generation processes completed at $(date)"
+
+      - name: Final Database Check
+        run: |
+          echo "Final database check after all generations..."
+          curl -s "https://techinsightsai-backend.vercel.app/api/blogs/diagnose" | jq .
