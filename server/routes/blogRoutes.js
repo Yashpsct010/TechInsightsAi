@@ -42,4 +42,14 @@ router.get("/diagnose", async (req, res) => {
   }
 });
 
+// Simple CORS test endpoint
+router.get("/cors-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "CORS is properly configured!",
+    origin: req.headers.origin || "No origin header",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 module.exports = router;
