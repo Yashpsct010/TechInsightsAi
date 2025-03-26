@@ -1,15 +1,15 @@
 {
     "routes": [
-        { 
-            "src": "/api/(.*)", 
-            "dest": "https://techinsightsai-backend.vercel.app/api/$1" 
+        {
+            "src": "/api/(.*)",
+            "dest": "https://techinsightsai.onrender.com/api/$1"
         },
-        { 
-            "handle": "filesystem" 
+        {
+            "handle": "filesystem"
         },
-        { 
-            "src": "/(.*)", 
-            "dest": "/index.html" 
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ]
 }

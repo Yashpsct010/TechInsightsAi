@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: techinsightsai
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_API_URL
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false
+      - key: CRON_SECRET
+        sync: false

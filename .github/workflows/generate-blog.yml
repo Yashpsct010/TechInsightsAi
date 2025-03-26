@@ -12,13 +12,13 @@ jobs:
       - name: Basic Health Check
         run: |
           echo "Performing basic health check..."
-          curl -s -m 5 "https://techinsightsai-backend.vercel.app/health" || echo "Health check timed out or failed, but continuing..."
+          curl -s -m 5 "https://techinsightsai.onrender.com/health" || echo "Health check timed out or failed, but continuing..."
 
       - name: Generate General Blog
         id: general
         run: |
           echo "Generating general blog..."
-          RESPONSE=$(curl -s -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+          RESPONSE=$(curl -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{}')
@@ -29,7 +29,7 @@ jobs:
       - name: Check Latest General Blog
         run: |
           echo "Checking latest blog..."
-          curl -s -m 10 "https://techinsightsai-backend.vercel.app/api/blogs/latest" \
+          curl -s -m 10 "https://techinsightsai.onrender.com/api/blogs/latest" \
             || echo "Blog check timed out, but continuing..."
 
       - name: Generate Genre-Specific Blogs
@@ -40,7 +40,7 @@ jobs:
             local display_name=$2
             
             echo "Generating $display_name blog..."
-            curl -s -m 30 -X POST "https://techinsightsai-backend.vercel.app/api/blogs/generate" \
+            curl -s -m 30 -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
               -H "Content-Type: application/json" \
               -d "{\"genre\":\"$genre\"}" \
