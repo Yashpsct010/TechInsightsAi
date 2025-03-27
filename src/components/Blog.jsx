@@ -102,7 +102,7 @@ const Blog = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5 }}
             >
-                <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">Tech Insights Blog</h2>
+                <h2 className="pb-4 text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">Tech Insights Blog</h2>
                 <div className="mb-6">
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Filter by Topic:</h3>
                     <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -266,7 +266,7 @@ const Blog = () => {
                         </motion.div>
 
                         <motion.div
-                            className="px-4 sm:px-6 pb-4 sm:pb-6 prose prose-sm sm:prose-lg max-w-none"
+                            className="blog-content px-4 sm:px-6 pb-4 sm:pb-6 prose prose-sm sm:prose-lg max-w-none"
                             dangerouslySetInnerHTML={{ __html: blog.body }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
