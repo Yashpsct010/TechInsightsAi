@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1080" height="1080" viewBox="0 0 1080 1080" xml:space="preserve">
+<desc>Created with Fabric.js 5.2.4</desc>
+<defs>
+</defs>
+<g transform="matrix(1 0 0 1 540 540)" id="3f4dc55c-d60f-45a7-8788-65da3b5aa8a1"  >
+<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1; visibility: hidden;" vector-effect="non-scaling-stroke"  x="-540" y="-540" rx="0" ry="0" width="1080" height="1080" />
+</g>
+<g transform="matrix(1 0 0 1 540 540)" id="c07760e3-c636-4ef4-a58a-fa4535af7fc1"  >
+</g>
+<g transform="matrix(2.11 0 0 2.11 540 540)"  >
+<circle style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  cx="0" cy="0" r="256" />
+</g>
+<g transform="matrix(1.61 0 0 1.61 539 540)"  >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(65,123,252); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-176, -256)" d="M 96.06 454.35 C 96.07000000000001 460.64000000000004 97.93 466.8 101.42 472.04 L 118.51 497.73 C 124.43951230272909 506.6495452181462 134.43937896201865 512.0098341030807 145.15 512.01 L 206.86 512.01 C 217.57062103798137 512.0098341030807 227.57048769727095 506.6495452181462 233.5 497.73 L 250.59 472.04 C 254.07849286465776 466.79924621167953 255.943012378282 460.64563610048316 255.95000000000002 454.35 L 255.99 416 L 96.01 416 L 96.06 454.35 z M 0 176 C 0 220.37 16.45 260.85 43.56 291.78 C 60.08 310.63 85.92 350.01 95.77000000000001 383.22999999999996 C 95.81000000000002 383.48999999999995 95.84 383.74999999999994 95.88000000000001 384.00999999999993 L 256.12 384.00999999999993 C 256.16 383.74999999999994 256.19 383.49999999999994 256.23 383.22999999999996 C 266.08000000000004 350.01 291.92 310.63 308.44 291.78 C 335.55 260.85 352 220.37 352 176 C 352 78.61 272.91 -0.3 175.45 0 C 73.44 0.31 0 82.97 0 176 z M 176 96 C 131.89 96 96 131.89 96 176 C 96 184.84 88.84 192 80 192 C 71.16 192 64 184.84 64 176 C 64 114.24000000000001 114.24000000000001 64 176 64 C 184.84 64 192 71.16 192 80 C 192 88.84 184.84 96 176 96 z" stroke-linecap="round" />
+</g>
+</svg>
