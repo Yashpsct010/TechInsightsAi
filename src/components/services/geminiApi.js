@@ -14,53 +14,55 @@ export async function fetchBlogContent() {
       );
     }
 
-    const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
-        You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable for tech enthusiasts, developers, and industry professionals.
+    const prompt = `You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging tech blog post covering the latest trends in technology. 
 
-        Blog Focus Areas:
-        Your article should include at least three of the following topics:
+Blog Structure & Requirements:  
+Ensure the article follows this exact structure with HTML tags for proper formatting:
 
-        - Tech Hacks & Coding Tricks - New shortcuts, tools, or techniques to boost productivity.
-        - Latest Software & Feature Releases - Newly launched software, libraries, or updates from big tech companies.
-        - AI & Machine Learning Advances - New AI models, research breakthroughs, and their real-world impact.
-        - Emerging Technologies - Blockchain, Quantum Computing, Web3, AR/VR, etc.
-        - Cybersecurity Trends - Latest security threats, best practices, or data privacy concerns.
-        - Major Tech News - Big announcements from companies like Google, Microsoft, OpenAI, etc.
-            
-        The article should be comprehensive (around 800-1000 words) and include:
-        
-        1. An engaging title
-        2. An introduction to the topic
-        3. Key points and analysis
-        4. Industry implications
-        5. Future outlook
-        6. A conclusion
-        
-        Also include:
-        - 3-5 related resource links with titles and brief descriptions
-        - A suggestion for an image that could accompany this article (describe it in detail)
-        A detailed description of an image that could accompany this article, including specific search terms and resources (like a URL) where such an image could be found.
-        
-        Format your response as JSON with the following structure:
-        {
-          "title": "The blog post title",
-          "body": "The full HTML formatted blog post content with proper h2, h3, p, ul, li tags, etc.",
-          "image": "A link to a relevant royalty-free image or detailed description for an image to use",
-          "imageAlt": "Alt text for the image",
-          "imageCaption": "A brief caption for the image",
-          "links": [
-            {
-              "title": "Resource title",
-              "url": "Resource URL",
-              "description": "Brief description of the resource",
-              "image": "A link to a relevant royalty-free image or detailed description for an image to use",
-              "imageAlt": "Alt text for the image",
-              "imageCaption": "A brief caption for the image"
-            }
-          ]
-        }
-        
-        Focus on providing valuable insights and accurate information about current technology trends.`;
+1. Title (h1)  
+   - The title should be engaging, SEO-friendly, and under 70 characters.  
+
+2. Introduction (h2)  
+   - Hook the reader in 2-3 sentences.  
+   - Explain why this topic is important today.  
+
+3. Key Points & Analysis (h2)  
+   - Cover at least three of the following areas:  
+     - Tech Hacks & Coding Tricks (New shortcuts, tools, or techniques)  
+     - Latest Software & Feature Releases (New updates, frameworks, tools)  
+     - AI & Machine Learning Advances (Research breakthroughs, real-world impact)  
+     - Emerging Technologies (Blockchain, Quantum Computing, Web3, AR/VR)  
+     - Cybersecurity Trends (Threats, best practices, data privacy concerns)  
+     - Major Tech News (Announcements from Google, Microsoft, OpenAI, etc.)  
+
+4. Industry Implications (h2)  
+   - How does this affect developers, businesses, and end-users?  
+   - Include real-world examples (e.g., Google, OpenAI, Meta innovations).  
+
+5. Future Outlook (h2)  
+   - Predict where this technology is heading.  
+   - Mention potential risks and benefits.  
+
+6. Conclusion (h2)  
+   - Summarize key takeaways.  
+   - Include a call to action (e.g., “What are your thoughts on this? Comment below!”).  
+
+Image Requirements:  
+- Suggest one featured image with a detailed description.  
+- Provide alt text and a caption for accessibility.  
+
+External Resources (3-5 links):  
+- Title: Short and clear.  
+- URL: Valid and relevant.  
+- Description: Brief explanation of why it is useful.  
+
+Final Checklist:  
+- Title under 70 characters.  
+- Follows HTML structure with h2, h3, p, ul, li tags.  
+- Includes at least three key tech topics.  
+- Includes one image suggestion.  
+- Includes three to five external links.  
+`;
 
     const requestBody = {
       contents: [

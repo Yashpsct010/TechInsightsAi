@@ -66,22 +66,53 @@ const About = () => {
             exit={{ opacity: 0 }}
         >
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-blue-800 to-indigo-900 text-white py-16 relative overflow-hidden">
-                {/* Decorative elements */}
-                <div className="absolute inset-0 overflow-hidden opacity-20">
-                    <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-400 rounded-full filter blur-3xl"></div>
-                    <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-400 rounded-full filter blur-3xl"></div>
+            <div className="bg-gradient-to-r from-blue-800 to-indigo-900 text-white py-12 md:py-20 relative overflow-hidden">
+                {/* Enhanced Decorative elements */}
+                <div className="absolute inset-0 overflow-hidden opacity-30">
+                    <motion.div
+                        className="absolute -top-32 -right-32 w-72 md:w-96 h-72 md:h-96 bg-blue-400 rounded-full filter blur-3xl"
+                        animate={{
+                            scale: [1, 1.2, 1],
+                            opacity: [0.2, 0.3, 0.2]
+                        }}
+                        transition={{
+                            duration: 8,
+                            repeat: Infinity,
+                            repeatType: "reverse"
+                        }}
+                    />
+                    <motion.div
+                        className="absolute -bottom-32 -left-32 w-72 md:w-96 h-72 md:h-96 bg-indigo-400 rounded-full filter blur-3xl"
+                        animate={{
+                            scale: [1, 1.1, 1],
+                            opacity: [0.2, 0.4, 0.2]
+                        }}
+                        transition={{
+                            duration: 6,
+                            repeat: Infinity,
+                            repeatType: "reverse",
+                            delay: 1
+                        }}
+                    />
                 </div>
 
-                <div className="container mx-auto px-4 relative z-10">
+                <div className="container mx-auto px-4 sm:px-6 relative z-10">
                     <motion.div
                         className="max-w-3xl mx-auto text-center"
                         variants={fadeIn}
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6">About TechInsights AI</h1>
-                        <p className="text-xl text-blue-100 leading-relaxed">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6">
+                            <motion.span
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3, duration: 0.7 }}
+                            >
+                                About TechInsights AI
+                            </motion.span>
+                        </h1>
+                        <p className="text-lg sm:text-xl text-blue-100 leading-relaxed max-w-2xl mx-auto">
                             We're on a mission to make technology insights accessible to everyone through the power of artificial intelligence.
                         </p>
                     </motion.div>
