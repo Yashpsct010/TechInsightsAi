@@ -13,6 +13,29 @@ router.get("/all", blogController.getAllBlogs);
 // Generate a new blog (protected, for admin or cron job)
 router.post("/generate", blogController.generateBlog);
 
+// Get a single blog by ID - new endpoint
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid blog ID format" });
+    }
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    res.json(blog);
+  } catch (error) {
+    console.error(`Error fetching blog with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Lightweight diagnostic endpoint for GitHub Actions
 router.get("/diagnose", async (req, res) => {
   try {

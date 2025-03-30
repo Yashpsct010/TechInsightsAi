@@ -25,10 +25,11 @@ const Header = () => {
         setIsMenuOpen(false);
     }, [location]);
 
-    // Navigation items
+    // Navigation items - Updated to include Blogs
     const navItems = [
         { name: 'Home', path: '/' },
-        { name: 'Blog', path: '/blog' },
+        { name: 'Latest Blog', path: '/blog' },
+        { name: 'All Blogs', path: '/blogs' },
         { name: 'About', path: '/about' }
     ];
 

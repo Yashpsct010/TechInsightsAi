@@ -63,3 +63,28 @@ export async function fetchBlogArchive(page = 1, limit = 10, genre = null) {
     throw error;
   }
 }
+
+/**
+ * Fetch a single blog post by ID
+ * @param {string} id - The ID of the blog post
+ * @returns {Promise<Object>} Blog post data
+ */
+export async function fetchBlogById(id) {
+  try {
+    if (!id) {
+      throw new Error("Blog ID is required");
+    }
+
+    const response = await fetch(`${API_URL}/blogs/${id}`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API error: ${errorData.error || response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching blog with ID ${id}:`, error);
+    throw error;
+  }
+}

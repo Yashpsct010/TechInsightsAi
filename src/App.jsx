@@ -6,6 +6,8 @@ import Footer from './components/Footer';
 import Home from './components/Home';
 import Blog from './components/Blog';
 import About from './components/About';
+import BlogsPage from './components/BlogsPage';
+import BlogDetailPage from './components/BlogDetailPage';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/about" element={<About />} />
+              <Route path="/blogs" element={<BlogsPage />} />
+              <Route path="/blog/:id" element={<BlogDetailPage />} />
             </Routes>
           </AnimatePresence>
         </main>

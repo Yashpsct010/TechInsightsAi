@@ -143,10 +143,13 @@ const Home = () => {
                                 className="w-full sm:w-auto"
                             >
                                 <Link
-                                    to="/about"
-                                    className="w-full sm:w-auto bg-white text-gray-800 font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg shadow-md hover:shadow-lg border border-gray-100 transition-all duration-300 flex items-center justify-center gap-2"
+                                    to="/blogs"
+                                    className="w-full sm:w-auto bg-white text-blue-700 font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg shadow-md hover:shadow-lg border border-blue-100 transition-all duration-300 flex items-center justify-center gap-2"
                                 >
-                                    Learn More
+                                    <span>Browse All Blogs</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </Link>
                             </motion.div>
                         </motion.div>
@@ -247,12 +250,19 @@ const Home = () => {
                         whileInView={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.4 }}
                         viewport={{ once: true }}
+                        className="flex flex-wrap justify-center gap-4"
                     >
                         <Link
                             to="/blog"
                             className="inline-block bg-white text-blue-700 font-medium py-3 px-6 sm:py-3 sm:px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                         >
-                            Start Reading Now
+                            Read Latest Blog
+                        </Link>
+                        <Link
+                            to="/blogs"
+                            className="inline-block bg-blue-800 text-white font-medium py-3 px-6 sm:py-3 sm:px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                            Browse All Blogs
                         </Link>
                     </motion.div>
                 </div>
