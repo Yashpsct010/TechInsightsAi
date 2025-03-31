@@ -176,8 +176,8 @@ const BlogsPage = () => {
                                     <button
                                         key={genre.id}
                                         className={`px-3 py-1.5 rounded-md text-sm transition-colors ${(selectedGenre === genre.id || (genre.id === 'all' && selectedGenre === null))
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                         onClick={() => handleGenreChange(genre.id)}
                                     >
@@ -195,8 +195,8 @@ const BlogsPage = () => {
                                     <button
                                         key={filter.id}
                                         className={`px-3 py-1.5 rounded-md text-sm transition-colors ${dateFilter === filter.id
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                         onClick={() => handleDateFilterChange(filter.id)}
                                     >
@@ -299,37 +299,101 @@ const BlogsPage = () => {
                 {/* Pagination */}
                 {!loading && !error && blogs.length > 0 && (
                     <div className="mt-10 flex justify-center">
-                        <nav className="flex items-center space-x-2">
+                        <nav className="flex flex-wrap items-center justify-center gap-2">
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
                                 className={`px-3 py-1 rounded-md ${currentPage === 1
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 Previous
                             </button>
 
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={`px-3 py-1 rounded-md ${currentPage === page
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
+                            {(() => {
+                                const pageButtons = [];
+                                const maxVisiblePages = window.innerWidth < 640 ? 3 : 5;
+
+                                // Always show first page
+                                if (totalPages > 0) {
+                                    pageButtons.push(
+                                        <button
+                                            key={1}
+                                            onClick={() => setCurrentPage(1)}
+                                            className={`px-3 py-1 rounded-md ${currentPage === 1
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            1
+                                        </button>
+                                    );
+                                }
+
+                                // Calculate range around current page
+                                let startPage = Math.max(2, currentPage - Math.floor(maxVisiblePages / 2));
+                                let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 2);
+
+                                if (endPage - startPage < maxVisiblePages - 2) {
+                                    startPage = Math.max(2, endPage - maxVisiblePages + 2);
+                                }
+
+                                // Add ellipsis if needed
+                                if (startPage > 2) {
+                                    pageButtons.push(
+                                        <span key="ellipsis-start" className="px-2 py-1 text-gray-500">...</span>
+                                    );
+                                }
+
+                                // Add pages around current page
+                                for (let i = startPage; i <= endPage; i++) {
+                                    pageButtons.push(
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentPage(i)}
+                                            className={`px-3 py-1 rounded-md ${currentPage === i
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            {i}
+                                        </button>
+                                    );
+                                }
+
+                                // Add ellipsis if needed
+                                if (endPage < totalPages - 1) {
+                                    pageButtons.push(
+                                        <span key="ellipsis-end" className="px-2 py-1 text-gray-500">...</span>
+                                    );
+                                }
+
+                                // Always show last page if there is more than one page
+                                if (totalPages > 1) {
+                                    pageButtons.push(
+                                        <button
+                                            key={totalPages}
+                                            onClick={() => setCurrentPage(totalPages)}
+                                            className={`px-3 py-1 rounded-md ${currentPage === totalPages
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            {totalPages}
+                                        </button>
+                                    );
+                                }
+
+                                return pageButtons;
+                            })()}
 
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
                                 className={`px-3 py-1 rounded-md ${currentPage === totalPages
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 Next
