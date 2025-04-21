@@ -51,6 +51,52 @@ export default defineConfig({
               },
             },
           },
+          {
+            // Cache your API responses
+            urlPattern:
+              /^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "blog-api-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              backgroundSync: {
+                name: "blog-queue",
+                options: {
+                  maxRetentionTime: 24 * 60, // Retry for max of 24 hours (specified in minutes)
+                },
+              },
+            },
+          },
+          {
+            // Cache blog images
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+          {
+            // Fallback for everything else
+            urlPattern: /.*$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "fallback-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+            },
+          },
         ],
       },
       devOptions: {

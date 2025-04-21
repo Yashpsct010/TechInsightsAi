@@ -4,8 +4,9 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './index.css';
 
-// Register service worker
+// Register service worker with immediate update check
 const updateSW = registerSW({
+    immediate: true,
     onNeedRefresh() {
         // Show a prompt to the user to refresh for new content
         if (confirm('New content available. Reload?')) {
@@ -14,7 +15,7 @@ const updateSW = registerSW({
     },
     onOfflineReady() {
         console.log('App ready to work offline');
-        // You can show a notification to the user
+        // You could show a notification to the user here
     }
 });
 

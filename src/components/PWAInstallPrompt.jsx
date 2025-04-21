@@ -80,21 +80,23 @@ const PWAInstallPrompt = () => {
 
             {/* Debug info - remove in production */}
             {debugMode && (
-                <div className="bg-black/80 text-white text-xs p-2 rounded-md mt-2 w-48">
-                    <div>Install Available: {installPrompt ? 'Yes' : 'No'}</div>
-                    <div>Already Installed: {isInstalled ? 'Yes' : 'No'}</div>
-                    {import.meta.env.VITE_API_BASE_URL==='http://localhost:5000/api' ? (
-                        <div className="text-xs mt-1 opacity-70">
-                        Debug mode - click to {' '}
-                        <button
-                            className="underline text-blue-300"
-                            onClick={() => setDebugMode(false)}
-                        >
-                            disable
-                        </button>
-                    </div>
+                <>
+                    {import.meta.env.VITE_API_BASE_URL === 'http://localhost:5000/api' ? (
+                        <div className="bg-black/80 text-white text-xs p-2 rounded-md mt-2 w-48">
+                            <div>Install Available: {installPrompt ? 'Yes' : 'No'}</div>
+                            <div>Already Installed: {isInstalled ? 'Yes' : 'No'}</div>
+                            <div className="text-xs mt-1 opacity-70">
+                                Debug mode - click to {' '}
+                                <button
+                                    className="underline text-blue-300"
+                                    onClick={() => setDebugMode(false)}
+                                >
+                                    disable
+                                </button>
+                            </div>
+                        </div>
                     ) : null}
-                </div>
+                </>
             )}
         </motion.div>
     );
