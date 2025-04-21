@@ -1,0 +1,72 @@
+{
+  "name": "Tech Insights AI",
+  "short_name": "TechInsights",
+  "description": "Stay updated with the latest tech insights",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay"
+  ],
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "categories": [
+    "technology",
+    "news",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "public/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "public/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "public/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "public/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "TechInsights AI Home Screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Latest Blog",
+      "url": "/blog",
+      "description": "View the latest tech blog"
+    },
+    {
+      "name": "All Blogs",
+      "url": "/blogs",
+      "description": "Browse all tech blogs"
+    }
+  ]
+}

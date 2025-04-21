@@ -8,6 +8,7 @@ import Blog from './components/Blog';
 import About from './components/About';
 import BlogsPage from './components/BlogsPage';
 import BlogDetailPage from './components/BlogDetailPage';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           </AnimatePresence>
         </main>
         <Footer />
+        <PWAInstallPrompt />
       </div>
     </Router>
   );
