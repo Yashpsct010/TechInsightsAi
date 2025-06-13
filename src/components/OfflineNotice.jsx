@@ -25,9 +25,9 @@ const OfflineNotice = () => {
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -50, opacity: 0 }}
-                    className="fixed top-0 left-0 right-0 bg-amber-500 text-white p-2 z-50 flex items-center justify-center"
+                    className="fixed top-0 left-0 right-0 bg-fuchsia-700 text-white p-2 z-50 flex items-center justify-center border-b border-fuchsia-500/30"
                 >
-                    <FaExclamationTriangle className="mr-2" />
+                    <FaExclamationTriangle className="mr-2 text-lime-400" />
                     <span>You're currently offline. Some features may be limited.</span>
                 </motion.div>
             )}

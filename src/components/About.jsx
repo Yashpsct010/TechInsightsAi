@@ -14,45 +14,30 @@ const About = () => {
 
     const teamMembers = [
         {
-            name: "AI Writer",
-            role: "Content Generation",
-            image: "https://images.unsplash.com/photo-1639322537228-f710d846310a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-        },
-        {
-            name: "Human Editor",
-            role: "Content Curation",
-            image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-        },
-        {
-            name: "Tech Analyst",
-            role: "Technology Research",
-            image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-        },
-        {
-            name: "Product Designer",
-            role: "UI/UX Design",
-            image: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+            name: "Yash Parmar",
+            role: "Full Stack Developer",
+            image: "https://yash-parmar-portfolio.vercel.app/assets/download-CvYLU1Me.png",
         }
     ];
 
     const values = [
         {
-            icon: <FaPuzzlePiece className="text-3xl text-blue-600" />,
+            icon: <FaPuzzlePiece className="text-3xl text-cyan-400" />,
             title: "Innovation",
             description: "We embrace cutting-edge AI technology to create unique, informative content for our readers."
         },
         {
-            icon: <FaLightbulb className="text-3xl text-blue-600" />,
+            icon: <FaLightbulb className="text-3xl text-cyan-400" />,
             title: "Insight",
             description: "We strive to provide valuable insights that help our readers understand complex tech concepts."
         },
         {
-            icon: <FaRocket className="text-3xl text-blue-600" />,
+            icon: <FaRocket className="text-3xl text-fuchsia-500" />,
             title: "Quality",
             description: "We maintain high standards in our content, ensuring accuracy and relevance."
         },
         {
-            icon: <FaUsers className="text-3xl text-blue-600" />,
+            icon: <FaUsers className="text-3xl text-lime-400" />,
             title: "Community",
             description: "We aim to build a community of tech enthusiasts who share knowledge and ideas."
         },
@@ -60,17 +45,17 @@ const About = () => {
 
     return (
         <motion.div
-            className="min-h-screen bg-slate-50 pt-24 md:pt-28" // Added padding top for header
+            className="min-h-screen bg-slate-950 pt-24 md:pt-28" // Added padding top for header
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-blue-800 to-indigo-900 text-white py-12 md:py-20 relative overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-900 to-gray-900 text-white py-12 md:py-20 relative overflow-hidden">
                 {/* Enhanced Decorative elements */}
                 <div className="absolute inset-0 overflow-hidden opacity-30">
                     <motion.div
-                        className="absolute -top-32 -right-32 w-72 md:w-96 h-72 md:h-96 bg-blue-400 rounded-full filter blur-3xl"
+                        className="absolute -top-32 -right-32 w-72 md:w-96 h-72 md:h-96 bg-cyan-500 rounded-full filter blur-3xl"
                         animate={{
                             scale: [1, 1.2, 1],
                             opacity: [0.2, 0.3, 0.2]
@@ -82,7 +67,7 @@ const About = () => {
                         }}
                     />
                     <motion.div
-                        className="absolute -bottom-32 -left-32 w-72 md:w-96 h-72 md:h-96 bg-indigo-400 rounded-full filter blur-3xl"
+                        className="absolute -bottom-32 -left-32 w-72 md:w-96 h-72 md:h-96 bg-fuchsia-600 rounded-full filter blur-3xl"
                         animate={{
                             scale: [1, 1.1, 1],
                             opacity: [0.2, 0.4, 0.2]
@@ -112,7 +97,7 @@ const About = () => {
                                 About TechInsights AI
                             </motion.span>
                         </h1>
-                        <p className="text-lg sm:text-xl text-blue-100 leading-relaxed max-w-2xl mx-auto">
+                        <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
                             We're on a mission to make technology insights accessible to everyone through the power of artificial intelligence.
                         </p>
                     </motion.div>
@@ -120,7 +105,7 @@ const About = () => {
             </div>
 
             {/* Our Story Section */}
-            <div className="py-20 bg-white">
+            <div className="py-20 bg-slate-900">
                 <div className="container mx-auto px-4">
                     <motion.div
                         className="max-w-3xl mx-auto"
@@ -129,8 +114,8 @@ const About = () => {
                         whileInView="visible"
                         viewport={{ once: true, margin: "-100px" }}
                     >
-                        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">Our Story</h2>
-                        <div className="space-y-5 text-gray-700">
+                        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">Our Story</h2>
+                        <div className="space-y-5 text-gray-300">
                             <p>
                                 TechInsights AI began with a simple idea: use artificial intelligence to create high-quality content about technology trends and innovations. We recognized that keeping up with the rapidly evolving tech landscape is challenging, and many people struggle to find clear, accessible information.
                             </p>
@@ -146,10 +131,10 @@ const About = () => {
             </div>
 
             {/* Our Values Section */}
-            <div className="py-20 bg-gray-50">
+            <div className="py-20 bg-slate-950">
                 <div className="container mx-auto px-4">
                     <motion.h2
-                        className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text"
+                        className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text"
                         variants={fadeIn}
                         initial="hidden"
                         whileInView="visible"
@@ -162,7 +147,7 @@ const About = () => {
                         {values.map((value, index) => (
                             <motion.div
                                 key={index}
-                                className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                                className="bg-slate-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-slate-700"
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
@@ -170,12 +155,12 @@ const About = () => {
                                 whileHover={{ y: -5 }}
                             >
                                 <div className="flex justify-center mb-4">
-                                    <div className="bg-blue-100 p-3 rounded-full">
+                                    <div className="bg-slate-900 p-3 rounded-full border border-slate-700">
                                         {value.icon}
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-semibold text-center mb-3">{value.title}</h3>
-                                <p className="text-gray-600 text-center">{value.description}</p>
+                                <h3 className="text-xl font-semibold text-center mb-3 text-white">{value.title}</h3>
+                                <p className="text-gray-300 text-center">{value.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -183,10 +168,10 @@ const About = () => {
             </div>
 
             {/* Team Section */}
-            <div className="py-20 bg-white">
+            <div className="py-20 bg-slate-900">
                 <div className="container mx-auto px-4">
                     <motion.h2
-                        className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text"
+                        className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text"
                         variants={fadeIn}
                         initial="hidden"
                         whileInView="visible"
@@ -195,7 +180,7 @@ const About = () => {
                         Our Team
                     </motion.h2>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="flex justify-center">
                         {teamMembers.map((member, index) => (
                             <motion.div
                                 key={index}
@@ -206,7 +191,7 @@ const About = () => {
                                 transition={{ delay: index * 0.1 }}
                             >
                                 <motion.div
-                                    className="relative h-64 mb-4 rounded-2xl overflow-hidden shadow-md"
+                                    className="relative h-64 mb-4 rounded-2xl overflow-hidden shadow-md border border-slate-700"
                                     whileHover={{ scale: 1.03 }}
                                     transition={{ type: "spring", stiffness: 300 }}
                                 >
@@ -216,8 +201,8 @@ const About = () => {
                                         className="w-full h-full object-cover"
                                     />
                                 </motion.div>
-                                <h3 className="text-xl font-semibold">{member.name}</h3>
-                                <p className="text-blue-600">{member.role}</p>
+                                <h3 className="text-xl font-semibold text-white">{member.name}</h3>
+                                <p className="text-cyan-400">{member.role}</p>
                             </motion.div>
                         ))}
                     </div>

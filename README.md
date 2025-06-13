@@ -1,5 +1,4 @@
-# Gemini Blog
-
+# TechInsightsAi
 This project is a React application built with Vite that utilizes the Gemini API to generate a dynamic blog page. The blog content updates every 3 hours, providing fresh and relevant information to users.
 
 ## Project Structure

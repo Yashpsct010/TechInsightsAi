@@ -58,12 +58,12 @@ const Footer = () => {
 
     return (
         <>
-            <footer className="bg-gradient-to-b from-gray-900 to-blue-900 text-white relative">
+            <footer className="bg-gradient-to-b from-slate-900 to-gray-900 text-white relative">
                 {/* Enhanced Decorative Elements with animations */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-30" />
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30" />
                     <motion.div
-                        className="absolute -top-24 -right-24 w-32 sm:w-48 h-32 sm:h-48 bg-blue-500 rounded-full filter blur-3xl opacity-10"
+                        className="absolute -top-24 -right-24 w-32 sm:w-48 h-32 sm:h-48 bg-cyan-500 rounded-full filter blur-3xl opacity-10"
                         animate={{
                             y: [0, 15, 0],
                             scale: [1, 1.1, 1],
@@ -75,7 +75,7 @@ const Footer = () => {
                         }}
                     />
                     <motion.div
-                        className="absolute -bottom-20 -left-20 w-40 sm:w-60 h-40 sm:h-60 bg-indigo-500 rounded-full filter blur-3xl opacity-10"
+                        className="absolute -bottom-20 -left-20 w-40 sm:w-60 h-40 sm:h-60 bg-fuchsia-600 rounded-full filter blur-3xl opacity-10"
                         animate={{
                             y: [0, -15, 0],
                             scale: [1, 1.15, 1],
@@ -96,12 +96,12 @@ const Footer = () => {
                                 <motion.div
                                     whileHover={{ rotate: 360 }}
                                     transition={{ duration: 0.7 }}
-                                    className="bg-white rounded-full p-1.5 sm:p-2"
+                                    className="bg-slate-800 rounded-full p-1.5 sm:p-2 border border-cyan-500/30"
                                 >
-                                    <FaLightbulb className="text-blue-600 text-base sm:text-lg" />
+                                    <FaLightbulb className="text-cyan-400 text-base sm:text-lg" />
                                 </motion.div>
                                 <span className="font-bold text-lg sm:text-xl text-white">
-                                    Tech<span className="text-blue-300">Insights</span>AI
+                                    Tech<span className="text-cyan-400">Insights</span>AI
                                 </span>
                             </Link>
                             <p className="text-gray-300 mb-5 sm:mb-6 text-sm sm:text-base">
@@ -124,7 +124,7 @@ const Footer = () => {
                                                 <motion.li key={linkIdx} variants={item}>
                                                     <Link
                                                         to={link.path}
-                                                        className="text-gray-300 hover:text-blue-300 transition-colors flex items-center gap-2 text-sm sm:text-base"
+                                                        className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 text-sm sm:text-base"
                                                     >
                                                         {link.icon && <span>{link.icon}</span>}
                                                         {link.name}
@@ -140,7 +140,7 @@ const Footer = () => {
 
                     {/* Newsletter with improved responsiveness */}
                     <motion.div
-                        className="bg-white/5 backdrop-blur-sm rounded-lg sm:rounded-2xl p-4 sm:p-8 mb-8 sm:mb-10"
+                        className="bg-slate-800/50 backdrop-blur-sm rounded-lg sm:rounded-2xl p-4 sm:p-8 mb-8 sm:mb-10 border border-slate-700"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -156,13 +156,13 @@ const Footer = () => {
                                     <input
                                         type="email"
                                         placeholder="Enter your email"
-                                        className="bg-white/10 text-white rounded-l-lg px-3 sm:px-4 py-2 sm:py-3 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm sm:text-base"
+                                        className="bg-slate-700/70 text-white rounded-l-lg px-3 sm:px-4 py-2 sm:py-3 flex-grow focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base border-y border-l border-slate-600"
                                     />
                                     <motion.button
                                         type="submit"
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-r-lg transition-colors text-sm sm:text-base"
+                                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-r-lg transition-colors text-sm sm:text-base border border-fuchsia-400/30"
                                     >
                                         Subscribe
                                     </motion.button>
@@ -172,14 +172,14 @@ const Footer = () => {
                     </motion.div>
 
                     {/* Bottom Section with improved responsiveness */}
-                    <div className="pt-6 sm:pt-8 border-t border-gray-700/50 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                    <div className="pt-6 sm:pt-8 border-t border-slate-700/50 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                         <p className="text-gray-400 text-xs sm:text-sm">
                             &copy; {new Date().getFullYear()} TechInsights AI. All rights reserved.
                         </p>
                         <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-                            <Link to="#" className="text-gray-400 hover:text-blue-300 text-xs sm:text-sm transition-colors">Privacy Policy</Link>
-                            <Link to="#" className="text-gray-400 hover:text-blue-300 text-xs sm:text-sm transition-colors">Terms of Service</Link>
-                            <Link to="#" className="text-gray-400 hover:text-blue-300 text-xs sm:text-sm transition-colors">Cookie Policy</Link>
+                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Privacy Policy</Link>
+                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Terms of Service</Link>
+                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Cookie Policy</Link>
                         </div>
                     </div>
                 </div>

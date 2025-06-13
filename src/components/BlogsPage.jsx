@@ -139,26 +139,26 @@ const BlogsPage = () => {
             className="container mx-auto px-4 py-8 max-w-6xl pt-20 md:pt-28"
         >
             <div className="mb-8">
-                <h1 className="text-3xl py-2 sm:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
+                <h1 className="text-3xl py-2 sm:text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">
                     All Tech Blogs
                 </h1>
 
                 {/* Search and filters section */}
-                <div className="bg-white shadow-md rounded-lg p-4 mb-8">
+                <div className="bg-slate-800 shadow-md rounded-lg p-4 mb-8 border border-slate-700">
                     {/* Search form */}
                     <form onSubmit={handleSearch} className="mb-6">
                         <div className="flex flex-col md:flex-row gap-3">
                             <input
                                 type="text"
                                 placeholder="Search blogs..."
-                                className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="flex-grow px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
                                 value={searchTerm}
                                 onChange={handleSearchChange}
                             />
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 transition-colors border border-cyan-400/30"
                                 type="submit"
                             >
                                 Search
@@ -170,14 +170,14 @@ const BlogsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Genre filter */}
                         <div>
-                            <h3 className="text-lg font-medium mb-3">Filter by Topic:</h3>
+                            <h3 className="text-lg font-medium mb-3 text-white">Filter by Topic:</h3>
                             <div className="flex flex-wrap gap-2">
                                 {genres.map((genre) => (
                                     <button
                                         key={genre.id}
                                         className={`px-3 py-1.5 rounded-md text-sm transition-colors ${(selectedGenre === genre.id || (genre.id === 'all' && selectedGenre === null))
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            ? 'bg-cyan-600 text-white border border-cyan-400/30'
+                                            : 'bg-slate-700 text-gray-300 hover:bg-slate-600 border border-slate-600'
                                             }`}
                                         onClick={() => handleGenreChange(genre.id)}
                                     >
@@ -189,14 +189,14 @@ const BlogsPage = () => {
 
                         {/* Date filter */}
                         <div>
-                            <h3 className="text-lg font-medium mb-3">Filter by Date:</h3>
+                            <h3 className="text-lg font-medium mb-3 text-white">Filter by Date:</h3>
                             <div className="flex flex-wrap gap-2">
                                 {dateFilters.map((filter) => (
                                     <button
                                         key={filter.id}
                                         className={`px-3 py-1.5 rounded-md text-sm transition-colors ${dateFilter === filter.id
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            ? 'bg-fuchsia-600 text-white border border-fuchsia-400/30'
+                                            : 'bg-slate-700 text-gray-300 hover:bg-slate-600 border border-slate-600'
                                             }`}
                                         onClick={() => handleDateFilterChange(filter.id)}
                                     >
@@ -218,7 +218,7 @@ const BlogsPage = () => {
                             exit={{ opacity: 0 }}
                             className="flex justify-center py-20"
                         >
-                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-500"></div>
                         </motion.div>
                     ) : error ? (
                         <motion.div
@@ -226,13 +226,13 @@ const BlogsPage = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg"
+                            className="bg-slate-800 border border-red-500/30 text-gray-100 p-6 rounded-lg"
                         >
-                            <h3 className="font-bold text-lg mb-2">Error</h3>
+                            <h3 className="font-bold text-lg mb-2 text-red-400">Error</h3>
                             <p>{error}</p>
                             <button
                                 onClick={fetchBlogs}
-                                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                className="mt-4 px-4 py-2 bg-fuchsia-600 text-white rounded-md hover:bg-fuchsia-500 border border-fuchsia-400/30"
                             >
                                 Try Again
                             </button>
@@ -243,10 +243,10 @@ const BlogsPage = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="text-center py-16"
+                            className="text-center py-16 text-white"
                         >
                             <h3 className="text-xl font-medium mb-2">No blogs found</h3>
-                            <p className="text-gray-600">Try adjusting your filters or search terms</p>
+                            <p className="text-gray-300">Try adjusting your filters or search terms</p>
                         </motion.div>
                     ) : (
                         <motion.div
@@ -260,7 +260,7 @@ const BlogsPage = () => {
                                 <motion.div
                                     key={blog._id}
                                     variants={item}
-                                    className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                                    className="bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-slate-700"
                                 >
                                     <Link to={`/blog/${blog._id}`} className="block h-full">
                                         <div className="h-48 overflow-hidden">
@@ -272,19 +272,19 @@ const BlogsPage = () => {
                                         </div>
                                         <div className="p-4">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                                <span className="px-2 py-0.5 bg-cyan-900/50 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
                                                     {blog.genre.charAt(0).toUpperCase() + blog.genre.slice(1).replace('-', ' ')}
                                                 </span>
-                                                <span className="text-gray-500 text-xs">
+                                                <span className="text-gray-400 text-xs">
                                                     {formatDate(blog.createdAt)}
                                                 </span>
                                             </div>
-                                            <h2 className="text-lg font-semibold mb-2 line-clamp-2">
+                                            <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-white">
                                                 {blog.title}
                                             </h2>
                                             <div className="mt-4 flex justify-between items-center">
-                                                <span className="text-blue-600 text-sm font-medium">Read more</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <span className="text-cyan-400 text-sm font-medium">Read more</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                 </svg>
                                             </div>
@@ -304,8 +304,8 @@ const BlogsPage = () => {
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
                                 className={`px-3 py-1 rounded-md ${currentPage === 1
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-slate-700 text-gray-400 cursor-not-allowed border border-slate-600'
+                                    : 'bg-slate-700 text-gray-200 hover:bg-slate-600 border border-slate-600'
                                     }`}
                             >
                                 Previous
@@ -322,8 +322,8 @@ const BlogsPage = () => {
                                             key={1}
                                             onClick={() => setCurrentPage(1)}
                                             className={`px-3 py-1 rounded-md ${currentPage === 1
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-cyan-600 text-white border border-cyan-400/30'
+                                                : 'bg-slate-700 text-gray-200 hover:bg-slate-600 border border-slate-600'
                                                 }`}
                                         >
                                             1
@@ -342,7 +342,7 @@ const BlogsPage = () => {
                                 // Add ellipsis if needed
                                 if (startPage > 2) {
                                     pageButtons.push(
-                                        <span key="ellipsis-start" className="px-2 py-1 text-gray-500">...</span>
+                                        <span key="ellipsis-start" className="px-2 py-1 text-gray-400">...</span>
                                     );
                                 }
 
@@ -353,8 +353,8 @@ const BlogsPage = () => {
                                             key={i}
                                             onClick={() => setCurrentPage(i)}
                                             className={`px-3 py-1 rounded-md ${currentPage === i
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-cyan-600 text-white border border-cyan-400/30'
+                                                : 'bg-slate-700 text-gray-200 hover:bg-slate-600 border border-slate-600'
                                                 }`}
                                         >
                                             {i}
@@ -365,7 +365,7 @@ const BlogsPage = () => {
                                 // Add ellipsis if needed
                                 if (endPage < totalPages - 1) {
                                     pageButtons.push(
-                                        <span key="ellipsis-end" className="px-2 py-1 text-gray-500">...</span>
+                                        <span key="ellipsis-end" className="px-2 py-1 text-gray-400">...</span>
                                     );
                                 }
 
@@ -376,8 +376,8 @@ const BlogsPage = () => {
                                             key={totalPages}
                                             onClick={() => setCurrentPage(totalPages)}
                                             className={`px-3 py-1 rounded-md ${currentPage === totalPages
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-cyan-600 text-white border border-cyan-400/30'
+                                                : 'bg-slate-700 text-gray-200 hover:bg-slate-600 border border-slate-600'
                                                 }`}
                                         >
                                             {totalPages}
@@ -392,8 +392,8 @@ const BlogsPage = () => {
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
                                 className={`px-3 py-1 rounded-md ${currentPage === totalPages
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-slate-700 text-gray-400 cursor-not-allowed border border-slate-600'
+                                    : 'bg-slate-700 text-gray-200 hover:bg-slate-600 border border-slate-600'
                                     }`}
                             >
                                 Next

@@ -42,8 +42,8 @@ const Header = () => {
         <>
             <motion.header
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-gradient-to-r from-blue-900/95 via-blue-800/95 to-indigo-800/95 backdrop-blur-sm shadow-lg py-2 sm:py-3'
-                    : 'bg-gradient-to-r from-blue-800 to-indigo-700 py-3 sm:py-5'
+                    ? 'bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 backdrop-blur-sm shadow-lg py-2 sm:py-3'
+                    : 'bg-gradient-to-r from-slate-900 to-gray-900 py-3 sm:py-5'
                     }`}
             >
                 <div className="container mx-auto px-4">
@@ -59,13 +59,13 @@ const Header = () => {
                                         rotate: [0, -10, 10, -10, 0],
                                         transition: { duration: 0.5 }
                                     }}
-                                    className="bg-white rounded-full p-1.5 sm:p-2 shadow-md"
+                                    className="bg-slate-800 rounded-full p-1.5 sm:p-2 shadow-md border border-cyan-400/50"
                                 >
-                                    <FaLightbulb className="text-blue-600 text-lg sm:text-xl" />
+                                    <FaLightbulb className="text-cyan-400 text-lg sm:text-xl" />
                                 </motion.div>
                                 <div>
                                     <span className="font-bold text-lg sm:text-xl md:text-2xl text-white">
-                                        Tech<span className="text-blue-200">Insights</span>AI
+                                        Tech<span className="text-cyan-400">Insights</span>AI
                                     </span>
                                 </div>
                             </Link>
@@ -84,7 +84,7 @@ const Header = () => {
                                         to={item.path}
                                         className={({ isActive }) => `
                                             relative px-4 lg:px-5 py-2 rounded-md text-sm font-medium 
-                                            ${isActive ? 'text-white' : 'text-blue-100 hover:text-white'}
+                                            ${isActive ? 'text-cyan-400' : 'text-gray-100 hover:text-cyan-300'}
                                         `}
                                     >
                                         {({ isActive }) => (
@@ -92,7 +92,7 @@ const Header = () => {
                                                 {isActive && (
                                                     <motion.span
                                                         layoutId="navIndicator"
-                                                        className="absolute inset-0 bg-white/10 rounded-md -z-10"
+                                                        className="absolute inset-0 bg-fuchsia-900/30 rounded-md -z-10"
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
                                                         transition={{ type: "spring", stiffness: 300 }}
@@ -108,7 +108,7 @@ const Header = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="ml-2 lg:ml-4 bg-white text-blue-700 px-4 lg:px-5 py-1.5 lg:py-2 rounded-full font-medium text-sm shadow hover:shadow-lg hover:bg-blue-50 transition-all"
+                                className="ml-2 lg:ml-4 bg-fuchsia-600 text-white px-4 lg:px-5 py-1.5 lg:py-2 rounded-full font-medium text-sm shadow-md shadow-fuchsia-700/30 hover:shadow-lg hover:bg-fuchsia-500 transition-all border border-fuchsia-400/50"
                                 onClick={handleSubscribeClick}
                             >
                                 Subscribe
@@ -117,7 +117,7 @@ const Header = () => {
 
                         {/* Mobile Menu Button - Enhanced with smoother animations */}
                         <motion.button
-                            className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 text-white"
+                            className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             aria-label="Toggle menu"
                             initial={{ opacity: 0 }}
@@ -160,7 +160,7 @@ const Header = () => {
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
-                            className="fixed inset-0 z-40 bg-gradient-to-br from-blue-900/98 to-indigo-900/98 backdrop-blur-sm md:hidden"
+                            className="fixed inset-0 z-40 bg-gradient-to-br from-slate-900/98 to-gray-900/98 backdrop-blur-sm md:hidden"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -190,8 +190,8 @@ const Header = () => {
                                                 to={item.path}
                                                 className={({ isActive }) =>
                                                     `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-medium rounded-xl transition-colors ${isActive
-                                                        ? 'bg-white/10 text-white'
-                                                        : 'text-blue-100 hover:bg-white/5 hover:text-white'
+                                                        ? 'bg-fuchsia-900/20 text-cyan-400 border border-fuchsia-500/30'
+                                                        : 'text-gray-100 hover:bg-slate-800/50 hover:text-cyan-300'
                                                     }`
                                                 }
                                                 onClick={() => setIsMenuOpen(false)}
@@ -208,7 +208,7 @@ const Header = () => {
                                         className="pt-4 sm:pt-6"
                                     >
                                         <button
-                                            className="w-full bg-white text-blue-700 py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-medium shadow-lg text-center text-base sm:text-lg"
+                                            className="w-full bg-fuchsia-600 text-white py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-medium shadow-lg text-center text-base sm:text-lg border border-fuchsia-400/50"
                                             onClick={handleSubscribeClick}
                                         >
                                             Subscribe
@@ -220,7 +220,7 @@ const Header = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.6 }}
-                                        className="text-center text-blue-200 text-xs sm:text-sm"
+                                        className="text-center text-cyan-300/70 text-xs sm:text-sm"
                                     >
                                         © {new Date().getFullYear()} TechInsights AI
                                     </motion.div>

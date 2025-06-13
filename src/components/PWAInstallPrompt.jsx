@@ -70,7 +70,7 @@ const PWAInstallPrompt = () => {
                 onClick={handleInstallClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg"
+                className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-3 rounded-full shadow-lg border border-cyan-400/30"
             >
                 <FaDownload size={16} /> {/* Fixed icon usage */}
                 <span className="font-medium text-sm">
@@ -82,13 +82,13 @@ const PWAInstallPrompt = () => {
             {debugMode && (
                 <>
                     {import.meta.env.VITE_API_BASE_URL === 'http://localhost:5000/api' ? (
-                        <div className="bg-black/80 text-white text-xs p-2 rounded-md mt-2 w-48">
+                        <div className="bg-slate-900/90 text-white text-xs p-2 rounded-md mt-2 w-48 border border-slate-700">
                             <div>Install Available: {installPrompt ? 'Yes' : 'No'}</div>
                             <div>Already Installed: {isInstalled ? 'Yes' : 'No'}</div>
                             <div className="text-xs mt-1 opacity-70">
                                 Debug mode - click to {' '}
                                 <button
-                                    className="underline text-blue-300"
+                                    className="underline text-cyan-400"
                                     onClick={() => setDebugMode(false)}
                                 >
                                     disable
