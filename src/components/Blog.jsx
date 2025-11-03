@@ -104,7 +104,7 @@ const Blog = () => {
             >
                 <h2 className="pb-4 text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">Tech Insights Blog</h2>
                 <div className="mb-6">
-                    <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Filter by Topic:</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-600">Filter by Topic:</h3>
                     <div className="flex flex-wrap gap-2 sm:gap-3">
                         {genres.map((genre, index) => (
                             <motion.button
