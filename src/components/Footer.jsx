@@ -18,8 +18,8 @@ const Footer = () => {
             links: [
                 { name: 'About', path: '/about' },
                 { name: 'Blog', path: '/blog' },
-                { name: 'Careers', path: '#' },
-                { name: 'Contact', path: '#' }
+                { name: 'Blogs', path: '/blogs' },
+                { name: 'Portfolio', path: 'https://yash-parmar-portfolio.vercel.app/' },
             ]
         },
         {
@@ -35,7 +35,7 @@ const Footer = () => {
             title: 'Follow Us',
             links: [
                 { name: 'Twitter', path: 'https://x.com/Yashp010', icon: <FaTwitter /> },
-                { name: 'LinkedIn', path: 'https://www.linkedin.com/in/yashparmar010/', icon: <FaLinkedinIn /> },
+                { name: 'LinkedIn', path: 'https://www.linkedin.com/in/y-sh/', icon: <FaLinkedinIn /> },
                 { name: 'GitHub', path: 'https://github.com/Yashpsct010', icon: <FaGithub /> }
             ]
         }

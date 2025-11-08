@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = "techInsightsOfflineDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bumped to 2 to add indexes to existing databases
 const BLOGS_STORE = "blogs";
 const LATEST_BLOG_KEY = "latestBlog";
 
@@ -11,14 +11,16 @@ let db = null;
 
 /**
  * Initialize the IndexedDB database
+ * Returns immediately if db is already initialized (optimized for performance)
  */
 export const initializeDB = () => {
-  return new Promise((resolve, reject) => {
-    if (db) {
-      resolve(db);
-      return;
-    }
+  // Return immediately if db is already initialized (synchronous path)
+  if (db) {
+    return Promise.resolve(db);
+  }
 
+  // Only create Promise if db needs to be initialized
+  return new Promise((resolve, reject) => {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = (event) => {
@@ -36,8 +38,23 @@ export const initializeDB = () => {
       const database = event.target.result;
 
       if (!database.objectStoreNames.contains(BLOGS_STORE)) {
-        database.createObjectStore(BLOGS_STORE, { keyPath: "_id" });
-        console.log("Blog store created");
+        const store = database.createObjectStore(BLOGS_STORE, {
+          keyPath: "_id",
+        });
+        // Add indexes for better query performance
+        store.createIndex("genre", "genre", { unique: false });
+        store.createIndex("createdAt", "createdAt", { unique: false });
+        console.log("Blog store created with indexes");
+      } else {
+        // Add indexes to existing store if they don't exist
+        const transaction = event.target.transaction;
+        const store = transaction.objectStore(BLOGS_STORE);
+        if (!store.indexNames.contains("genre")) {
+          store.createIndex("genre", "genre", { unique: false });
+        }
+        if (!store.indexNames.contains("createdAt")) {
+          store.createIndex("createdAt", "createdAt", { unique: false });
+        }
       }
     };
   });
@@ -49,7 +66,11 @@ export const initializeDB = () => {
  */
 export const saveBlog = async (blog) => {
   try {
-    await initializeDB();
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readwrite");
       const store = transaction.objectStore(BLOGS_STORE);
@@ -87,7 +108,11 @@ export const saveLatestBlog = async (blog) => {
  */
 export const getBlog = async (id) => {
   try {
-    await initializeDB();
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readonly");
       const store = transaction.objectStore(BLOGS_STORE);
@@ -110,13 +135,38 @@ export const getBlog = async (id) => {
 
 /**
  * Get the latest blog from offline storage
+ * Optimized to avoid double initialization
  */
 export const getLatestBlog = async () => {
   const latestBlogId = localStorage.getItem(LATEST_BLOG_KEY);
-  if (latestBlogId) {
-    return getBlog(latestBlogId);
+  if (!latestBlogId) {
+    return null;
   }
-  return null;
+
+  try {
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([BLOGS_STORE], "readonly");
+      const store = transaction.objectStore(BLOGS_STORE);
+      const request = store.get(latestBlogId);
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = (event) => {
+        console.error("Error getting latest blog:", event.target.error);
+        reject(event.target.error);
+      };
+    });
+  } catch (error) {
+    console.error("Failed to get latest blog:", error);
+    return null;
+  }
 };
 
 /**
@@ -124,7 +174,11 @@ export const getLatestBlog = async () => {
  */
 export const getAllBlogs = async () => {
   try {
-    await initializeDB();
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readonly");
       const store = transaction.objectStore(BLOGS_STORE);

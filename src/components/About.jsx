@@ -16,7 +16,7 @@ const About = () => {
         {
             name: "Yash Parmar",
             role: "Full Stack Developer",
-            image: "https://yash-parmar-portfolio.vercel.app/assets/download-CvYLU1Me.png",
+            image: "https://yash-parmar-portfolio.vercel.app/assets/profilepic-zx21daIn.jpg",
         }
     ];
 
@@ -177,7 +177,7 @@ const About = () => {
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
-                        Our Team
+                        Our Creator
                     </motion.h2>
 
                     <div className="flex justify-center">
