@@ -5,9 +5,26 @@ import { FaDownload, FaTimes } from 'react-icons/fa';
 const PWA_INSTALL_DISMISSED_KEY = 'pwa-install-dismissed';
 const PWA_INSTALL_DISMISSED_TIMESTAMP_KEY = 'pwa-install-dismissed-timestamp';
 
+// Helper function to check if app is installed (can be called synchronously)
+const checkIfInstalled = () => {
+    // Check for standalone display mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+    const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
+    
+    // Check for iOS standalone mode
+    const isInWebAppiOS = window.navigator.standalone === true;
+    
+    // Check if running in a PWA context
+    const isPWAMode = isStandalone || isFullscreen || isMinimalUI || isInWebAppiOS;
+    
+    return isPWAMode;
+};
+
 const PWAInstallPrompt = () => {
     const [installPrompt, setInstallPrompt] = useState(null);
-    const [isInstalled, setIsInstalled] = useState(false);
+    // Initialize with synchronous check to prevent initial render with install button
+    const [isInstalled, setIsInstalled] = useState(() => checkIfInstalled());
     const [isDismissed, setIsDismissed] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [debugMode, setDebugMode] = useState(
@@ -15,34 +32,21 @@ const PWAInstallPrompt = () => {
     );
 
     useEffect(() => {
-        // Check if app is already installed (standalone mode)
-        const checkInstalled = () => {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            const isInWebAppiOS = window.navigator.standalone === true;
-
-            if (isStandalone || isInWebAppiOS) {
-                setIsInstalled(true);
-                setIsVisible(false);
-                console.log('App is already installed/running in standalone mode');
-                return true;
-            }
-            return false;
-        };
+        // Re-check if app is installed on mount and update state
+        const installed = checkIfInstalled();
+        if (installed) {
+            setIsInstalled(true);
+            setIsVisible(false);
+            console.log('App is already installed/running in standalone mode');
+            return;
+        }
 
         // Check if user previously dismissed the prompt
-        const checkDismissed = () => {
-            const dismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
-            if (dismissed === 'true') {
-                setIsDismissed(true);
-                setIsVisible(false);
-                console.log('Install prompt was previously dismissed');
-                return true;
-            }
-            return false;
-        };
-
-        // Initial checks
-        if (checkInstalled() || checkDismissed()) {
+        const dismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
+        if (dismissed === 'true') {
+            setIsDismissed(true);
+            setIsVisible(false);
+            console.log('Install prompt was previously dismissed');
             return;
         }
 
@@ -69,7 +73,11 @@ const PWAInstallPrompt = () => {
         // Re-check on visibility change (user might have installed the app)
         const handleVisibilityChange = () => {
             if (!document.hidden) {
-                checkInstalled();
+                const installed = checkIfInstalled();
+                if (installed) {
+                    setIsInstalled(true);
+                    setIsVisible(false);
+                }
             }
         };
 
@@ -126,8 +134,11 @@ const PWAInstallPrompt = () => {
         console.log('User dismissed the install prompt');
     };
 
+    // Double-check if app is installed (safety check during render)
+    const currentlyInstalled = checkIfInstalled();
+
     // Don't show if installed (and not in debug mode) or if dismissed
-    if ((isInstalled || isDismissed) && !debugMode) return null;
+    if ((isInstalled || currentlyInstalled || isDismissed) && !debugMode) return null;
 
     // In production, only show if visible and install prompt is available
     if (!debugMode && (!isVisible || !installPrompt)) return null;
