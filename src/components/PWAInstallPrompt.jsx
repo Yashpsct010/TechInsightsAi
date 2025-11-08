@@ -11,13 +11,13 @@ const checkIfInstalled = () => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
     const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
-    
+
     // Check for iOS standalone mode
     const isInWebAppiOS = window.navigator.standalone === true;
-    
+
     // Check if running in a PWA context
     const isPWAMode = isStandalone || isFullscreen || isMinimalUI || isInWebAppiOS;
-    
+
     return isPWAMode;
 };
 
