@@ -44,41 +44,15 @@ const BlogsPage = () => {
             setLoading(true);
             setError(null);
 
-            // Construct the query parameters for filtering
+            // Prepare filter values to be sent to the backend
             const genre = selectedGenre === 'all' ? null : selectedGenre;
+            const term = searchTerm.trim() ? searchTerm.trim() : null;
+            const date = dateFilter === 'all' ? null : dateFilter;
 
-            // Fetch blogs with filters
-            const data = await fetchBlogArchive(currentPage, 9, genre);
+            // Fetch blogs with all filters sent to the backend for processing
+            const data = await fetchBlogArchive(currentPage, 9, genre, term, date);
 
-            // Apply client-side date filtering
-            let filteredBlogs = data.blogs;
-            if (dateFilter !== 'all') {
-                const now = new Date();
-                const filterDate = new Date();
-
-                if (dateFilter === 'week') {
-                    filterDate.setDate(now.getDate() - 7);
-                } else if (dateFilter === 'month') {
-                    filterDate.setMonth(now.getMonth() - 1);
-                } else if (dateFilter === 'year') {
-                    filterDate.setFullYear(now.getFullYear() - 1);
-                }
-
-                filteredBlogs = filteredBlogs.filter(blog =>
-                    new Date(blog.createdAt) >= filterDate
-                );
-            }
-
-            // Apply search term filter if present
-            if (searchTerm.trim()) {
-                const term = searchTerm.toLowerCase();
-                filteredBlogs = filteredBlogs.filter(blog =>
-                    blog.title.toLowerCase().includes(term) ||
-                    (blog.body && blog.body.toLowerCase().includes(term))
-                );
-            }
-
-            setBlogs(filteredBlogs);
+            setBlogs(data.blogs);
             setTotalPages(data.totalPages);
         } catch (err) {
             console.error("Failed to fetch blogs:", err);

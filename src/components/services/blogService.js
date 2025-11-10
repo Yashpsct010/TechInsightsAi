@@ -1,3 +1,4 @@
+import APIMonitor from '../utils/APIMonitor';
 import {
   saveLatestBlog,
   getLatestBlog,
@@ -26,49 +27,63 @@ const isOnline = () => {
  * @returns {Promise<Object>} Blog post data
  */
 export async function fetchLatestBlog(genre = null) {
-  try {
-    if (isOnline()) {
-      // Online mode: fetch from API
-      const url = `${API_URL}/blogs/latest${genre ? `?genre=${genre}` : ""}`;
-      const response = await fetch(url);
+  const endpoint = `${API_URL}/blogs/latest${genre ? `?genre=${genre}` : ""}`;
+  const MAX_RETRIES = 3;
+  let retries = 0;
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
+  while (retries <= MAX_RETRIES) {
+    try {
+      if (isOnline()) {
+        const startTime = Date.now();
+        const response = await fetch(endpoint);
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
 
-      const data = await response.json();
+        if (!response.ok) {
+          APIMonitor.recordRequest(endpoint, false, responseTime);
+          throw new Error(`API error: ${response.statusText}`);
+        }
 
-      if (data.blog) {
-        // Save to offline storage for later use
-        await saveLatestBlog(data.blog);
-        return data.blog;
-      }
+        const data = await response.json();
+        APIMonitor.recordRequest(endpoint, true, responseTime);
 
-      throw new Error("No blog data received from server");
-    } else {
-      // Offline mode: get from storage
-      console.log("Device is offline, using cached data");
-      const cachedBlog = await getLatestBlog();
+        if (data.blog) {
+          await saveLatestBlog(data.blog);
+          return data.blog;
+        }
 
-      if (!cachedBlog) {
-        throw new Error("No cached blog available while offline");
-      }
+        throw new Error("No blog data received from server");
+      } else {
+        // Offline mode: get from storage
+        console.log("Device is offline, using cached data");
+        const cachedBlog = await getLatestBlog();
 
-      return cachedBlog;
-    }
-  } catch (error) {
-    console.error("Error fetching latest blog:", error);
+        if (!cachedBlog) {
+          throw new Error("No cached blog available while offline");
+        }
 
-    // Try to get from cache as fallback even if we're online but request failed
-    if (error.message !== "No cached blog available while offline") {
-      const cachedBlog = await getLatestBlog();
-      if (cachedBlog) {
-        console.log("Using cached blog as fallback");
         return cachedBlog;
       }
+    } catch (error) {
+      console.error(`Attempt ${retries + 1} failed for ${endpoint}:`, error);
+      if (isOnline() && retries < MAX_RETRIES) {
+        retries++;
+        const backoffTime = APIMonitor.getBackoffTime(endpoint);
+        console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        continue; // Try again
+      } else {
+        // If offline or max retries reached, try to get from cache as fallback
+        if (error.message !== "No cached blog available while offline") {
+          const cachedBlog = await getLatestBlog();
+          if (cachedBlog) {
+            console.log("Using cached blog as fallback");
+            return cachedBlog;
+          }
+        }
+        throw error; // Re-throw if no fallback
+      }
     }
-
-    throw error;
   }
 }
 
@@ -79,27 +94,59 @@ export async function fetchLatestBlog(genre = null) {
  * @param {string} genre - Optional genre to filter by
  * @returns {Promise<Object>} Blog posts data with pagination info
  */
-export async function fetchBlogArchive(page = 1, limit = 10, genre = null) {
-  try {
-    const url = new URL(`${API_URL}/blogs/all`);
-    url.searchParams.append("page", page.toString());
-    url.searchParams.append("limit", limit.toString());
+export async function fetchBlogArchive(
+  page = 1,
+  limit = 10,
+  genre = null,
+  searchTerm = null,
+  dateFilter = null
+) {
+  const url = new URL(`${API_URL}/blogs/all`);
+  url.searchParams.append("page", page.toString());
+  url.searchParams.append("limit", limit.toString());
 
-    if (genre) {
-      url.searchParams.append("genre", genre);
+  if (genre) {
+    url.searchParams.append("genre", genre);
+  }
+  if (searchTerm) {
+    url.searchParams.append("searchTerm", searchTerm);
+  }
+  if (dateFilter) {
+    url.searchParams.append("dateFilter", dateFilter);
+  }
+
+  const endpoint = url.toString(); // Use the full URL as the endpoint identifier
+  const MAX_RETRIES = 3;
+  let retries = 0;
+
+  while (retries <= MAX_RETRIES) {
+    try {
+      const startTime = Date.now();
+      const response = await fetch(endpoint);
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+
+      if (!response.ok) {
+        APIMonitor.recordRequest(endpoint, false, responseTime);
+        const errorData = await response.json();
+        throw new Error(`API error: ${errorData.error || response.statusText}`);
+      }
+
+      const data = await response.json();
+      APIMonitor.recordRequest(endpoint, true, responseTime);
+      return data;
+    } catch (error) {
+      console.error(`Attempt ${retries + 1} failed for ${endpoint}:`, error);
+      if (retries < MAX_RETRIES) {
+        retries++;
+        const backoffTime = APIMonitor.getBackoffTime(endpoint);
+        console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        continue; // Try again
+      } else {
+        throw error; // Re-throw if max retries reached
+      }
     }
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API error: ${errorData.error || response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching blog archive:", error);
-    throw error;
   }
 }
 
@@ -109,43 +156,58 @@ export async function fetchBlogArchive(page = 1, limit = 10, genre = null) {
  * @returns {Promise<Object>} Blog post data
  */
 export async function fetchBlogById(id) {
-  try {
-    if (isOnline()) {
-      // Online mode: fetch from API
-      const response = await fetch(`${API_URL}/blogs/${id}`);
+  const endpoint = `${API_URL}/blogs/${id}`;
+  const MAX_RETRIES = 3;
+  let retries = 0;
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
+  while (retries <= MAX_RETRIES) {
+    try {
+      if (isOnline()) {
+        const startTime = Date.now();
+        const response = await fetch(endpoint);
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
 
-      const blog = await response.json();
+        if (!response.ok) {
+          APIMonitor.recordRequest(endpoint, false, responseTime);
+          throw new Error(`API error: ${response.statusText}`);
+        }
 
-      // Save to offline storage
-      await saveBlog(blog);
-      return blog;
-    } else {
-      // Offline mode: get from storage
-      console.log("Device is offline, using cached blog");
-      const cachedBlog = await getBlog(id);
+        const blog = await response.json();
+        APIMonitor.recordRequest(endpoint, true, responseTime);
 
-      if (!cachedBlog) {
-        throw new Error("Requested blog not available offline");
-      }
+        await saveBlog(blog);
+        return blog;
+      } else {
+        // Offline mode: get from storage
+        console.log("Device is offline, using cached blog");
+        const cachedBlog = await getBlog(id);
 
-      return cachedBlog;
-    }
-  } catch (error) {
-    console.error("Error fetching blog by ID:", error);
+        if (!cachedBlog) {
+          throw new Error("Requested blog not available offline");
+        }
 
-    // Try to get from cache as fallback
-    if (error.message !== "Requested blog not available offline") {
-      const cachedBlog = await getBlog(id);
-      if (cachedBlog) {
-        console.log("Using cached blog as fallback");
         return cachedBlog;
       }
+    } catch (error) {
+      console.error(`Attempt ${retries + 1} failed for ${endpoint}:`, error);
+      if (isOnline() && retries < MAX_RETRIES) {
+        retries++;
+        const backoffTime = APIMonitor.getBackoffTime(endpoint);
+        console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        continue; // Try again
+      } else {
+        // If offline or max retries reached, try to get from cache as fallback
+        if (error.message !== "Requested blog not available offline") {
+          const cachedBlog = await getBlog(id);
+          if (cachedBlog) {
+            console.log("Using cached blog as fallback");
+            return cachedBlog;
+          }
+        }
+        throw error; // Re-throw if no fallback
+      }
     }
-
-    throw error;
   }
 }

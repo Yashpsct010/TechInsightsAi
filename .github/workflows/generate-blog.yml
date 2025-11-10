@@ -6,55 +6,37 @@ on:
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
-  generate-blogs:
+  # This job runs first to "wake up" the serverless backend
+  warm-up:
     runs-on: ubuntu-latest
     steps:
       - name: Basic Health Check
         run: |
-          echo "Performing basic health check..."
-          curl -s -m 5 "https://techinsightsai.onrender.com/health" || echo "Health check timed out or failed, but continuing..."
+          echo "Performing basic health check to warm up the server..."
+          curl --fail -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check failed, but continuing to trigger generation jobs."
 
-      - name: Generate General Blog
-        id: general
+  # This job runs in parallel for each genre after the warm-up is complete
+  generate-blog:
+    needs: warm-up # Ensures the warm-up job runs first
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Ensures all jobs run even if one fails
+      matrix:
+        # Defines the list of genres to generate
+        genre: ['general', 'ai-ml', 'cybersecurity', 'coding', 'emerging-tech', 'tech-news']
+    steps:
+      - name: Trigger Blog Generation for ${{ matrix.genre }}
         run: |
-          echo "Generating general blog..."
-          RESPONSE=$(curl -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
+          # Prepare the JSON payload. It's empty for 'general' and contains the genre for others.
+          JSON_PAYLOAD="{}"
+          if [ "${{ matrix.genre }}" != "general" ]; then
+            JSON_PAYLOAD=$(printf '{"genre":"%s"}' "${{ matrix.genre }}")
+          fi
+          
+          echo "Generating blog for genre: ${{ matrix.genre }}"
+          
+          # Send the API request to trigger blog generation
+          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            -d '{}')
-          echo "Response: $RESPONSE"
-          echo "Waiting 5 minutes for processing to complete..."
-          sleep 300
-
-      - name: Check Latest General Blog
-        run: |
-          echo "Checking latest blog..."
-          curl -s -m 10 "https://techinsightsai.onrender.com/api/blogs/latest" \
-            || echo "Blog check timed out, but continuing..."
-
-      - name: Generate Genre-Specific Blogs
-        run: |
-          # Function to generate blog with error handling
-          generate_blog() {
-            local genre=$1
-            local display_name=$2
-            
-            echo "Generating $display_name blog..."
-            curl -s -m 30 -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
-              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"genre\":\"$genre\"}" \
-              || echo "Request timed out for $display_name, but continuing..."
-            
-            echo "Waiting for $display_name blog processing..."
-            sleep 180
-          }
-
-          # Generate all genre blogs
-          generate_blog "ai-ml" "AI/ML"
-          generate_blog "cybersecurity" "Cybersecurity"
-          generate_blog "coding" "Coding"
-          generate_blog "emerging-tech" "Emerging Tech"
-          generate_blog "tech-news" "Tech News"
-
-          echo "All blog generation processes completed at $(date)"
+            -d "$JSON_PAYLOAD"

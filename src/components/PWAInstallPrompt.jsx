@@ -4,6 +4,7 @@ import { FaDownload, FaTimes } from 'react-icons/fa';
 
 const PWA_INSTALL_DISMISSED_KEY = 'pwa-install-dismissed';
 const PWA_INSTALL_DISMISSED_TIMESTAMP_KEY = 'pwa-install-dismissed-timestamp';
+const DISMISS_COOL_OFF_DAYS = 7; // Prompt can reappear after 7 days
 
 // Helper function to check if app is installed (can be called synchronously)
 const checkIfInstalled = () => {
@@ -25,7 +26,7 @@ const PWAInstallPrompt = () => {
     const [installPrompt, setInstallPrompt] = useState(null);
     // Initialize with synchronous check to prevent initial render with install button
     const [isInstalled, setIsInstalled] = useState(() => checkIfInstalled());
-    const [isDismissed, setIsDismissed] = useState(false);
+    const [isDismissed, setIsDismissed] = useState(false); // Will be updated by useEffect
     const [isVisible, setIsVisible] = useState(false);
     const [debugMode, setDebugMode] = useState(
         import.meta.env.DEV || import.meta.env.VITE_API_BASE_URL === 'http://localhost:5000/api'
@@ -41,34 +42,53 @@ const PWAInstallPrompt = () => {
             return;
         }
 
-        // Check if user previously dismissed the prompt
-        const dismissed = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
-        if (dismissed === 'true') {
-            setIsDismissed(true);
-            setIsVisible(false);
-            console.log('Install prompt was previously dismissed');
-            return;
+        // --- Handle dismissal with cool-off period ---
+        const dismissedFlag = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY);
+        const dismissedTimestamp = localStorage.getItem(PWA_INSTALL_DISMISSED_TIMESTAMP_KEY);
+
+        if (dismissedFlag === 'true' && dismissedTimestamp) {
+            const lastDismissedTime = parseInt(dismissedTimestamp, 10);
+            const now = Date.now();
+            const coolOffPeriodMs = DISMISS_COOL_OFF_DAYS * 24 * 60 * 60 * 1000;
+
+            if (now - lastDismissedTime < coolOffPeriodMs) {
+                setIsDismissed(true);
+                setIsVisible(false);
+                console.log(`Install prompt dismissed, cool-off active for ${DISMISS_COOL_OFF_DAYS} days.`);
+                return; // Do not show prompt if within cool-off
+            } else {
+                // Cool-off period expired, clear dismissal flags
+                localStorage.removeItem(PWA_INSTALL_DISMISSED_KEY);
+                localStorage.removeItem(PWA_INSTALL_DISMISSED_TIMESTAMP_KEY);
+                setIsDismissed(false); // Reset to allow prompt to show again
+                console.log('Install prompt cool-off expired, prompt can now be shown.');
+            }
         }
+        // --- End dismissal handling ---
 
         const handleBeforeInstallPrompt = (e) => {
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
             // Stash the event so it can be triggered later
             setInstallPrompt(e);
-            setIsVisible(true);
+            // Only set visible if not dismissed by cool-off
+            if (!isDismissed) {
+                setIsVisible(true);
+            }
             console.log('Install prompt detected!');
         };
 
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-        // Listen for app installed event
-        window.addEventListener('appinstalled', () => {
+        const handleAppInstalled = () => {
             setIsInstalled(true);
             setIsVisible(false);
             setInstallPrompt(null);
             localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, 'true');
+            localStorage.setItem(PWA_INSTALL_DISMISSED_TIMESTAMP_KEY, Date.now().toString());
             console.log('PWA was installed');
-        });
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
 
         // Re-check on visibility change (user might have installed the app)
         const handleVisibilityChange = () => {
@@ -85,10 +105,10 @@ const PWAInstallPrompt = () => {
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-            window.removeEventListener('appinstalled', () => { });
+            window.removeEventListener('appinstalled', handleAppInstalled); // Correct cleanup
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, []);
+    }, [isDismissed]); // isDismissed is a dependency because its initial value affects prompt visibility
 
     const handleInstallClick = async () => {
         if (!installPrompt) {

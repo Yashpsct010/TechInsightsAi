@@ -1,83 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { fetchLatestBlog } from './services/blogService';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLatestBlog } from './hooks/useLatestBlog';
 
 const Blog = () => {
-    const [blog, setBlog] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedGenre, setSelectedGenre] = useState(null);
-    const [isRetrying, setIsRetrying] = useState(false);
+    const { blog, loading, error, isRetrying, setGenre, retry } = useLatestBlog(null);
+    const [uiSelectedGenre, setUiSelectedGenre] = useState('all'); // Track UI selection
 
-    // Debounce genre changes to prevent rapid API requests
-    const debouncedFetchBlog = useCallback((genre) => {
-        let timerId = null;
-
-        return (genreValue) => {
-            if (timerId) {
-                clearTimeout(timerId);
-            }
-
-            // Small delay to prevent multiple rapid requests
-            timerId = setTimeout(() => {
-                loadBlog(genreValue);
-            }, 300);
-
-            return () => {
-                if (timerId) clearTimeout(timerId);
-            };
-        };
-    }, []);
-
-    // Use useCallback to prevent recreating this function on every render
-    const loadBlog = useCallback(async (genreValue) => {
-        try {
-            setLoading(true);
-            setError(null);
-            setIsRetrying(false);
-
-            console.log(`Loading blog for genre: ${genreValue || 'all'}`);
-            const blogData = await fetchLatestBlog(genreValue);
-
-            if (!blogData) {
-                throw new Error("No blog data returned from server");
-            }
-
-            setBlog(blogData);
-        } catch (err) {
-            console.error("Failed to load blog:", err);
-
-            // More user-friendly error message
-            const errorMessage = err.message || "An unexpected error occurred";
-            setError(errorMessage);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // Retry logic for failed requests
-    const handleRetry = useCallback(() => {
-        setIsRetrying(true);
-        // Short delay before retry
-        setTimeout(() => {
-            loadBlog(selectedGenre);
-        }, 500);
-    }, [selectedGenre, loadBlog]);
-
-    // Initial load and genre change handler
-    useEffect(() => {
-        const cleanup = debouncedFetchBlog()(selectedGenre);
-        return cleanup;
-    }, [selectedGenre, debouncedFetchBlog]);
-
-    const handleGenreChange = (genre) => {
-        // Only change if different
-        if ((genre === "all" ? null : genre) !== selectedGenre) {
-            setSelectedGenre(genre === "all" ? null : genre);
-        }
+    const handleGenreChange = (newGenre) => {
+        setUiSelectedGenre(newGenre); // Update UI state
+        setGenre(newGenre === 'all' ? null : newGenre); // Update hook state for fetching
     };
 
-    // Same genres list
+    const handleRetry = () => {
+        retry();
+    };
+
     const genres = [
         { id: 'all', name: 'All Topics' },
         { id: 'tech-news', name: 'Tech News' },
@@ -109,7 +46,7 @@ const Blog = () => {
                         {genres.map((genre, index) => (
                             <motion.button
                                 key={genre.id}
-                                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border text-sm sm:text-base transition-colors ${selectedGenre === (genre.id === 'all' ? null : genre.id)
+                                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border text-sm sm:text-base transition-colors ${uiSelectedGenre === genre.id
                                     ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-500'
                                     : 'bg-slate-800 text-gray-200 border-slate-700 hover:bg-slate-700'
                                     }`}

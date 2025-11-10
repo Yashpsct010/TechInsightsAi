@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Blog = require("../models/Blog");
 const axios = require("axios");
 
@@ -79,52 +80,37 @@ function detectBlogGenre(content) {
   return detectedGenre;
 }
 
-// Get latest blog (or generate a new one if cache expired)
+// Get latest blog for a given genre
 exports.getLatestBlog = async (req, res) => {
   try {
-    // Get requested genre (defaults to any)
     const requestedGenre = req.query.genre || null;
-
-    // Define query based on genre
     const query = requestedGenre ? { genre: requestedGenre } : {};
 
-    // Find most recent blog
+    // Find the most recent blog for the given query
     const latestBlog = await Blog.findOne(query).sort({ createdAt: -1 }).exec();
 
-    const now = Date.now();
-
-    // If we have a recent blog (within cache window), return it
-    if (latestBlog && now - latestBlog.createdAt.getTime() < CACHE_WINDOW_MS) {
-      return res.json({
-        blog: latestBlog,
-        fresh: false,
-        nextRefresh: new Date(latestBlog.createdAt.getTime() + CACHE_WINDOW_MS),
-      });
+    if (!latestBlog) {
+      return res.status(404).json({ error: "No blog posts found." });
     }
 
-    // Otherwise, we need to generate a new blog
-    const newBlog = await generateNewBlog(requestedGenre);
-
-    return res.json({
-      blog: newBlog,
-      fresh: true,
-      nextRefresh: new Date(Date.now() + CACHE_WINDOW_MS),
-    });
+    res.json({ blog: latestBlog });
+    
   } catch (error) {
-    console.error("Error getting or generating blog:", error);
+    console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Generate a new blog using APIs
-async function generateNewBlog(genre = null) {
-  try {
-    // Build the Gemini API request
-    const geminiApiUrl = process.env.GEMINI_API_URL;
-    const geminiApiKey = process.env.GEMINI_API_KEY;
+/**
+ * Fetches AI-generated blog content from the Gemini API.
+ * @param {string | null} genre - The specific genre to request from the AI.
+ * @returns {Promise<object>} The parsed JSON content from the AI response.
+ */
+async function getAiGeneratedContent(genre = null) {
+  const geminiApiUrl = process.env.GEMINI_API_URL;
+  const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    // IMPORTANT: Use the same prompt structure that worked in the frontend
-    const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
+  const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
         ${genre ? `Focus specifically on ${genre}. ` : ""}
         You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable for tech enthusiasts, developers, and industry professionals.
 
@@ -173,141 +159,173 @@ async function generateNewBlog(genre = null) {
         
         Focus on providing valuable insights and accurate information about current technology trends.`;
 
-    // Use the same request structure that worked in the frontend
-    const requestBody = {
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 4096,
-      },
-    };
+  const requestBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 4096,
+    },
+  };
 
-    // Call the Gemini API
-    const response = await axios.post(
-      `${geminiApiUrl}?key=${geminiApiKey}`,
-      requestBody,
+  const response = await axios.post(
+    `${geminiApiUrl}?key=${geminiApiKey}`,
+    requestBody,
+    {
+      headers: { "Content-Type": "application/json" },
+      timeout: 25000,
+    }
+  );
+
+  const textResponse = response.data.candidates[0].content.parts[0].text;
+  console.log("Raw response received from Gemini API");
+
+  const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error(
+      "Failed to parse JSON from response:",
+      textResponse.substring(0, 500) + "..."
+    );
+    throw new Error("Failed to parse content from API response");
+  }
+
+  try {
+    const content = JSON.parse(jsonMatch[0]);
+    console.log("Successfully parsed JSON content");
+    return content;
+  } catch (jsonError) {
+    console.error(
+      "JSON parsing error:",
+      jsonError,
+      "Raw match:",
+      jsonMatch[0].substring(0, 500) + "..."
+    );
+    throw new Error("Failed to parse JSON content: " + jsonError.message);
+  }
+}
+
+/**
+ * Fetches an image URL for a blog post based on its title.
+ * @param {string} title - The title of the blog post.
+ * @returns {Promise<string>} The URL of the fetched image.
+ */
+async function getImageForBlog(title) {
+  try {
+    console.log("Attempting to fetch image from Unsplash...");
+    const searchQuery = title.replace(/[^\w\s]/gi, "").split(" ").slice(0, 5).join(" ");
+
+    const unsplashResponse = await axios.get(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+        searchQuery
+      )}&per_page=1&orientation=landscape`,
       {
-        headers: { "Content-Type": "application/json" },
-        timeout: 25000, // 25 second timeout
+        headers: {
+          Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+        },
+        timeout: 10000,
       }
     );
 
-    // Extract the blog content from response - ensure this matches the structure in geminiApi.js
-    const textResponse = response.data.candidates[0].content.parts[0].text;
-    console.log("Raw response received from Gemini API");
-
-    // Extract JSON from text response
-    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error(
-        "Failed to parse JSON from response:",
-        textResponse.substring(0, 500) + "..."
-      );
-      throw new Error("Failed to parse content from API response");
+    if (
+      unsplashResponse.data.results &&
+      unsplashResponse.data.results.length > 0
+    ) {
+      console.log("Successfully fetched image from Unsplash");
+      return unsplashResponse.data.results[0].urls.regular;
+    } else {
+      throw new Error("No image results found from Unsplash search.");
     }
+  } catch (imageError) {
+    console.warn(
+      "Unsplash image search failed, using fallback:",
+      imageError.message
+    );
+    const fallbackQuery = title.split(" ").slice(0, 3).join(" ");
+    const fallbackUrl = `https://source.unsplash.com/random/1200x800/?${encodeURIComponent(
+      fallbackQuery
+    )}`;
+    console.log(`Using fallback image URL: ${fallbackUrl}`);
+    return fallbackUrl;
+  }
+}
 
-    try {
-      const content = JSON.parse(jsonMatch[0]);
-      console.log("Successfully parsed JSON content");
+/**
+ * Orchestrates the generation of a new blog post by fetching content and images,
+ * then saving the final result to the database.
+ * @param {string | null} genre - The specific genre to generate.
+ * @returns {Promise<object>} The newly created blog document.
+ */
+async function generateNewBlog(genre = null) {
+  try {
+    // Step 1: Get AI-generated content
+    const content = await getAiGeneratedContent(genre);
 
-      // Generate image using Unsplash
-      let imageUrl;
-      try {
-        console.log("Attempting to fetch image from Unsplash...");
-        // Use Unsplash API to get an image
-        const searchQuery = content.title
-          .replace(/[^\w\s]/gi, "")
-          .split(" ")
-          .slice(0, 5)
-          .join(" ");
+    // Step 2: Get an image for the blog
+    const imageUrl = await getImageForBlog(content.title);
 
-        const unsplashResponse = await axios.get(
-          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
-            searchQuery
-          )}&per_page=1&orientation=landscape`,
-          {
-            headers: {
-              Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
-            },
-            timeout: 10000, // 10 second timeout
-          }
-        );
+    // Step 3: Determine the genre if not explicitly provided
+    const blogGenre = genre || detectBlogGenre(content);
 
-        if (
-          unsplashResponse.data.results &&
-          unsplashResponse.data.results.length > 0
-        ) {
-          imageUrl = unsplashResponse.data.results[0].urls.regular;
-          console.log("Successfully fetched image from Unsplash");
-        } else {
-          // Fallback to random tech image
-          throw new Error("No image results found");
-        }
-      } catch (imageError) {
-        console.warn(
-          "Unsplash image search failed, using fallback:",
-          imageError
-        );
-        // Fallback to unsplash random
-        imageUrl = `https://source.unsplash.com/random/1200x800/?${encodeURIComponent(
-          content.title.split(" ").slice(0, 3).join(" ")
-        )}`;
-        console.log("Using fallback image URL");
-      }
+    // Step 4: Create and save the new blog post
+    const blog = new Blog({
+      title: content.title,
+      body: content.body,
+      image: imageUrl,
+      imageAlt: content.imageAlt || `Blog post image about ${content.title}`,
+      imageCaption: content.imageCaption || "",
+      genre: blogGenre,
+      links: content.links || [],
+    });
 
-      // Set the image URL
-      content.image = imageUrl;
-
-      // Detect the blog genre if not specified
-      const blogGenre = genre || detectBlogGenre(content);
-
-      // Create and save the new blog
-      const blog = new Blog({
-        title: content.title,
-        body: content.body,
-        image: content.image,
-        imageAlt: content.imageAlt || "Blog post image about " + content.title,
-        imageCaption: content.imageCaption || "",
-        genre: blogGenre,
-        links: content.links || [],
-      });
-
-      console.log("Saving blog to database...");
-      await blog.save();
-      console.log("Blog saved successfully");
-      return blog;
-    } catch (jsonError) {
-      console.error(
-        "JSON parsing error:",
-        jsonError,
-        "Raw match:",
-        jsonMatch[0].substring(0, 500) + "..."
-      );
-      throw new Error("Failed to parse JSON content: " + jsonError.message);
-    }
+    console.log("Saving blog to database...");
+    await blog.save();
+    console.log("Blog saved successfully");
+    return blog;
   } catch (error) {
-    console.error("Failed to generate new blog:", error);
+    console.error("Failed to generate new blog:", error.message);
+    // Re-throw the error to be caught by the calling function in generateBlog
     throw error;
   }
 }
 
-// Get all blogs with pagination (for archive or admin)
+// Get all blogs with pagination and server-side filtering
 exports.getAllBlogs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const genre = req.query.genre || null;
+    const { genre, searchTerm, dateFilter } = req.query;
 
-    const query = genre ? { genre } : {};
+    // Build the query object based on request parameters
+    const query = {};
 
+    if (genre) {
+      query.genre = genre;
+    }
+
+    if (searchTerm) {
+      // Case-insensitive regex search on title and body
+      query.$or = [
+        { title: { $regex: searchTerm, $options: "i" } },
+        { body: { $regex: searchTerm, $options: "i" } },
+      ];
+    }
+
+    if (dateFilter && dateFilter !== "all") {
+      const now = new Date();
+      const filterDate = new Date();
+
+      if (dateFilter === "week") {
+        filterDate.setDate(now.getDate() - 7);
+      } else if (dateFilter === "month") {
+        filterDate.setMonth(now.getMonth() - 1);
+      } else if (dateFilter === "year") {
+        filterDate.setFullYear(now.getFullYear() - 1);
+      }
+      
+      // Add date condition to the query
+      query.createdAt = { $gte: filterDate };
+    }
+
+    // Execute queries to get blogs and total count
     const blogs = await Blog.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -321,6 +339,30 @@ exports.getAllBlogs = async (req, res) => {
       currentPage: page,
     });
   } catch (error) {
+    console.error("Error fetching all blogs:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get a single blog by ID
+exports.getBlogById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid blog ID format" });
+    }
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    res.json(blog);
+  } catch (error) {
+    console.error(`Error fetching blog with ID ${req.params.id}:`, error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -347,8 +389,8 @@ exports.generateBlog = async (req, res) => {
     // For Vercel serverless, we need to use a different approach than process.nextTick
     try {
       // Make sure we have a valid database connection
-      const { ensureConnection } = require("../utils/db");
-      await ensureConnection();
+      const connectToDB = require("../utils/db");
+      await connectToDB();
 
       // Check if we already have a recent blog of this genre (within 30 minutes)
       const existingBlog = await Blog.findOne(

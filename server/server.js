@@ -22,24 +22,7 @@ app.use(
   })
 );
 
-// Backup CORS headers for all responses
-app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://techinsightsai.vercel.app",
-    // "http://localhost:5173"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
 
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-  next();
-});
 
 app.use(express.json({ limit: "1mb" })); // Reduced payload limit for faster processing
 
@@ -55,31 +38,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// MongoDB connection optimization
-let cachedDb = null;
-const connectDB = async () => {
-  if (cachedDb && mongoose.connection.readyState === 1) {
-    console.log("Using cached database connection");
-    return;
-  }
-
-  try {
-    const options = {
-      serverSelectionTimeoutMS: 3000, // Reduced timeout
-      socketTimeoutMS: 30000, // Reduced timeout
-      connectTimeoutMS: 5000,
-      maxPoolSize: 10, // Limit connections for serverless
-      minPoolSize: 0, // Allow all connections to close when idle
-    };
-
-    await mongoose.connect(process.env.MONGODB_URI, options);
-    cachedDb = mongoose.connection.db;
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    throw err;
-  }
-};
+const connectToDB = require("./utils/db");
 
 // Define routes with fast timeouts
 app.use("/api/blogs", blogRoutes);
@@ -102,14 +61,14 @@ app.use((req, res) => {
 // For serverless environments like Vercel
 if (process.env.VERCEL) {
   // Connect to DB when module loads for faster cold starts
-  connectDB().catch(console.error);
+  connectToDB().catch(console.error);
 
   // Export the app for serverless use
   module.exports = app;
 } else {
   // Traditional server startup for local development
   const startServer = async () => {
-    await connectDB();
+    await connectToDB();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       // Only run cron jobs in traditional environment
@@ -124,7 +83,7 @@ if (process.env.VERCEL) {
 }
 
 // Always ensure DB connection for serverless
-connectDB().catch((err) => {
+connectToDB().catch((err) => {
   console.error("Failed to connect to database in serverless mode:", err);
   // Don't exit process in serverless environment
 });

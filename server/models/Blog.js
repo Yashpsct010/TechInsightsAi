@@ -64,18 +64,17 @@ const BlogSchema = new mongoose.Schema(
         },
       },
     ],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      index: true,
-    },
   },
   {
+    // This option automatically adds and manages createdAt and updatedAt fields
     timestamps: true,
   }
 );
 
 // Index for efficient genre-based queries
 BlogSchema.index({ genre: 1, createdAt: -1 });
+
+// Index for efficiently finding the latest blog across all genres
+BlogSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Blog", BlogSchema);

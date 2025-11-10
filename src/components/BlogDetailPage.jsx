@@ -1,40 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDate } from './utils/formatters';
+import { useBlogById } from './hooks/useBlogById';
 
 const BlogDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [blog, setBlog] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const loadBlog = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch blog by ID
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/blogs/${id}`);
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch blog: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                setBlog(data);
-            } catch (err) {
-                console.error("Failed to load blog:", err);
-                setError("We couldn't load this blog post. It might have been removed or doesn't exist.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadBlog();
-    }, [id]);
+    const { blog, loading, error } = useBlogById(id);
 
     const handleBackClick = () => {
         navigate('/blogs');
