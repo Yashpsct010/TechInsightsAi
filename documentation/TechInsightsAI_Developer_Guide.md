@@ -93,22 +93,6 @@ This is a React SPA built with Vite, which gives us faster builds than Create Re
 #### Backend (Express)
 
 We're running an Express.js server with a pretty standard structure:
-
-- **API Routes**: Defined in the routes folder, these handle different endpoints
-- **Controllers**: Business logic for handling requests
-- **Models**: Mongoose schemas for our MongoDB data
-- **Middleware**: For tasks like error handling, CORS, etc.
-
-The backend is deployed as serverless functions on Vercel, which means:
-
-- Each API route becomes its own function
-- Connection pooling becomes important (we don't want to create a new DB connection for each function call)
-- Cold starts can affect performance (we've implemented some optimizations for this)
-
-#### Database (MongoDB)
-
-We chose MongoDB for a few reasons:
-
 1. Schema flexibility - perfect for content that might evolve over time
 2. Great integration with Node.js via Mongoose
 3. MongoDB Atlas has a generous free tier that works well for our needs
@@ -794,7 +778,8 @@ Here's how to get your development environment set up:
 
    ```
    VITE_GEMINI_API_KEY=your_api_key
-   VITE_API_BASE_URL=http://localhost:5000
+   VITE_UNSPLASH_ACCESS_KEY=your_unsplash_key
+   # VITE_API_BASE_URL is optional, defaults to relative path /api
    ```
 
 3. **Start the development servers**
@@ -804,7 +789,8 @@ Here's how to get your development environment set up:
    npm run dev
 
    # Backend (in another terminal)
-   npm run server
+   cd server
+   nodemon server.js
    ```
 
 > 💡 **Pro Tip**: I recommend installing the Redux DevTools and React DevTools browser extensions even if we're not using Redux. They're invaluable for debugging React applications.
@@ -908,33 +894,6 @@ We deploy the app using Vercel for both frontend and backend:
 
 The frontend is automatically deployed whenever changes are pushed to the main branch:
 
-1. Code is pushed to GitHub
-2. Vercel detects the change and starts a new build
-3. Vite builds the project and generates the PWA assets
-4. The build is deployed to Vercel's CDN
-
-### Backend Deployment
-
-The backend is deployed as serverless functions:
-
-1. Each route becomes a separate serverless function
-2. The MongoDB connection is optimized for serverless environments
-3. Cold starts are minimized with connection pooling
-
-### Environment Variables
-
-Make sure these environment variables are set in your Vercel project:
-
-**Frontend:**
-
-- `VITE_GEMINI_API_KEY`: Your Google Gemini API key
-- `VITE_API_BASE_URL`: URL of the backend API
-
-**Backend:**
-
-- `MONGODB_URI`: MongoDB connection string
-- `GEMINI_API_KEY`: Google Gemini API key
-- `NODE_ENV`: Set to "production" in production environment
 
 ### Monitoring and Logs
 

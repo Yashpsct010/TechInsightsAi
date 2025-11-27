@@ -77,19 +77,6 @@ TechInsightsAI follows a modern client-server architecture with clear separation
    - MongoDB for persistent storage
    - Blog posts and related content
 
-4. **External Services**
-
-   - Gemini AI API for content generation
-   - Image service integrations
-
-5. **Infrastructure**
-   - Vercel for hosting
-   - GitHub Actions for automation
-
----
-
-## Frontend Structure
-
 ### Component Architecture
 
 The frontend follows a component-based architecture using React. Components are organized by functionality and reusability.
