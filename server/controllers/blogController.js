@@ -327,6 +327,7 @@ exports.getAllBlogs = async (req, res) => {
 
     // Execute queries to get blogs and total count
     const blogs = await Blog.find(query)
+      .select("-body") // Exclude body field for lighter payload
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
