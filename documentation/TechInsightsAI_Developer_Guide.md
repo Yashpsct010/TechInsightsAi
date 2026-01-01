@@ -93,6 +93,7 @@ This is a React SPA built with Vite, which gives us faster builds than Create Re
 #### Backend (Express)
 
 We're running an Express.js server with a pretty standard structure:
+
 1. Schema flexibility - perfect for content that might evolve over time
 2. Great integration with Node.js via Mongoose
 3. MongoDB Atlas has a generous free tier that works well for our needs
@@ -137,23 +138,20 @@ Here's a breakdown of the key components:
 
 This is our main component that sets up the routing structure. Take a look:
 
-```jsx
+````jsx
 function App() {
   useEffect(() => {
-    // Initialize IndexedDB when the app loads - this is crucial for offline data
-    // If this fails, offline features won't work properly
+    // Initialize the offline database when the app loads
     initializeDB().catch(console.error);
   }, []);
 
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        <OfflineNotice /> {/* This appears when the user is offline */}
+        <OfflineNotice />
         <Header />
         <main className="flex-grow">
           <AnimatePresence mode="wait">
-            {" "}
-            {/* This enables page transitions */}
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/blog" element={<Blog />} />
@@ -164,12 +162,12 @@ function App() {
           </AnimatePresence>
         </main>
         <Footer />
-        <PWAInstallPrompt /> {/* This prompts users to install the app */}
+        <PWAInstallPrompt />
       </div>
     </Router>
   );
 }
-```
+````
 
 > 📝 **Note**: The `<AnimatePresence>` component from Framer Motion enables page transition animations. The `mode="wait"` prop makes sure the exiting component finishes its animation before the entering component starts.
 
@@ -209,11 +207,15 @@ One of our biggest challenges was making the app work offline. Here's how we han
 1. **Service Worker**: Registers in `main.jsx` and caches static assets and API responses
 2. **IndexedDB**: Stores blog data for offline access
 
-```js
+````js
 // In offlineDataService.js
 export const saveBlog = async (blog) => {
   try {
-    await initializeDB();
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readwrite");
       const store = transaction.objectStore(BLOGS_STORE);
@@ -234,7 +236,7 @@ export const saveBlog = async (blog) => {
     return false;
   }
 };
-```
+````
 
 > ⚠️ **Gotcha**: IndexedDB operations are asynchronous but don't return promises natively. We wrap them in promises for easier use with async/await.
 
@@ -274,40 +276,53 @@ server/
 
 In a serverless environment, connection handling is crucial. Here's our approach:
 
-```js
+````js
 // In db.js
-let isConnected = false;
-let connectionPromise = null;
+const mongoose = require("mongoose");
 
-const connectToDatabase = async () => {
-  if (isConnected) {
-    console.log("Using existing database connection");
-    return;
+let cachedPromise = null;
+
+const connectToDB = async () => {
+  // If we have a cached promise, we are already connecting or are connected.
+  if (cachedPromise) {
+    return cachedPromise;
   }
 
-  // Reuse connection promise if connection is in progress
-  if (connectionPromise) {
-    console.log("Waiting for in-progress connection...");
-    await connectionPromise;
-    return;
+  // Check if we have a live connection.
+  if (mongoose.connection.readyState === 1) {
+    console.log("Using existing database connection.");
+    return Promise.resolve();
   }
 
-  // Connection logic with retries
-  connectionPromise = (async () => {
-    try {
-      // Connection code...
-      isConnected = true;
-      return true;
-    } catch (error) {
-      // Error handling...
-    } finally {
-      connectionPromise = null;
-    }
-  })();
+  console.log("Creating new database connection.");
+  const uri = process.env.MONGODB_URI;
 
-  return connectionPromise;
+  // Set up a new connection promise
+  cachedPromise = mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 5,
+    retryWrites: true,
+    w: "majority",
+  });
+
+  try {
+    await cachedPromise;
+    console.log("MongoDB successfully connected.");
+
+    mongoose.connection.on("disconnected", () => {
+      console.log("MongoDB disconnected.");
+      cachedPromise = null;
+    });
+  } catch (error) {
+    cachedPromise = null;
+    console.error("MongoDB connection error:", error.message);
+    throw error;
+  }
+
+  return cachedPromise;
 };
-```
+````
 
 > 💡 **Pro Tip**: This pattern prevents multiple serverless functions from creating their own connections simultaneously, which can lead to connection limits being exceeded.
 
@@ -369,41 +384,32 @@ The core of our application is the blog generation logic. Here's the simplified 
 3. Process and store the result
 4. Return to the client
 
-```js
+````js
+// In blogController.js
 exports.getLatestBlog = async (req, res) => {
   try {
-    // Get requested genre (defaults to any)
     const requestedGenre = req.query.genre || null;
     const query = requestedGenre ? { genre: requestedGenre } : {};
 
-    // Find most recent blog
+    // Find the most recent blog for the given query
     const latestBlog = await Blog.findOne(query).sort({ createdAt: -1 }).exec();
 
-    const now = Date.now();
-
-    // If we have a recent blog (within cache window), return it
-    if (latestBlog && now - latestBlog.createdAt.getTime() < CACHE_WINDOW_MS) {
-      return res.json({
-        blog: latestBlog,
-        fresh: false,
-        nextRefresh: new Date(latestBlog.createdAt.getTime() + CACHE_WINDOW_MS),
-      });
+    if (!latestBlog) {
+      return res.status(404).json({ error: "No blog posts found." });
     }
 
-    // Otherwise, generate a new blog
-    const newBlog = await generateNewBlog(requestedGenre);
+    res.json({ blog: latestBlog });
 
-    return res.json({
-      blog: newBlog,
-      fresh: true,
-      nextRefresh: new Date(Date.now() + CACHE_WINDOW_MS),
-    });
   } catch (error) {
-    console.error("Error getting or generating blog:", error);
+    console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
   }
 };
-```
+/*
+Note: The actual generation logic is handled in a separate generateBlog function
+or via cron jobs/admin requests, keeping the read path fast.
+*/
+````
 
 > 💡 **Pro Tip**: For expensive operations like AI content generation, always implement caching! It saves costs and improves performance dramatically.
 
@@ -544,7 +550,6 @@ export async function fetchBlogContent() {
         maxOutputTokens: 4096, // Maximum length of response
       },
     };
-
     const response = await fetch(`${API_URL}?key=${API_KEY}`, {
       method: "POST",
       headers: {
@@ -651,13 +656,12 @@ Making an app work offline is tricky but worthwhile. Here's how we approach it:
 
 We use different caching strategies for different types of requests:
 
-```js
+````js
 // In vite.config.js
 workbox: {
   globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
   runtimeCaching: [
     {
-      // For API requests: Try network first, fall back to cache
       urlPattern: /^https:\/\/api\.yourbackend\.com\/.*$/i,
       handler: "NetworkFirst",
       options: {
@@ -672,7 +676,29 @@ workbox: {
       },
     },
     {
-      // For images: Use cache first, fetch from network only if not cached
+      // Cache your API responses
+      urlPattern:
+        /^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i,
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "blog-api-cache",
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+        backgroundSync: {
+          name: "blog-queue",
+          options: {
+            maxRetentionTime: 24 * 60, // Retry for max of 24 hours
+          },
+        },
+      },
+    },
+    {
+      // Cache blog images
       urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/i,
       handler: "CacheFirst",
       options: {
@@ -686,7 +712,7 @@ workbox: {
     // ... other strategies ...
   ],
 }
-```
+````
 
 > 📝 **Caching Strategies Explained**:
 >
@@ -698,14 +724,24 @@ workbox: {
 
 Alongside the service worker, we use IndexedDB to store blog data:
 
-```js
+````js
+// In offlineDataService.js
 export const getLatestBlog = async () => {
+  const latestBlogId = localStorage.getItem(LATEST_BLOG_KEY);
+  if (!latestBlogId) {
+    return null;
+  }
+
   try {
-    await initializeDB();
+    // Only initialize if db doesn't exist (optimized path)
+    if (!db) {
+      await initializeDB();
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readonly");
       const store = transaction.objectStore(BLOGS_STORE);
-      const request = store.get(LATEST_BLOG_KEY);
+      const request = store.get(latestBlogId);
 
       request.onsuccess = (event) => {
         resolve(event.target.result);
@@ -721,7 +757,7 @@ export const getLatestBlog = async () => {
     return null;
   }
 };
-```
+````
 
 > ⚠️ **Gotcha**: IndexedDB operations can fail if the user is in private browsing mode in some browsers (especially Safari). Always have a fallback plan!
 
@@ -893,7 +929,6 @@ We deploy the app using Vercel for both frontend and backend:
 ### Frontend Deployment
 
 The frontend is automatically deployed whenever changes are pushed to the main branch:
-
 
 ### Monitoring and Logs
 

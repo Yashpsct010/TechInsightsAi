@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaLightbulb } from 'react-icons/fa';
 import ComingSoonPopup from './ComingSoonPopup';
 
+import { createPortal } from 'react-dom'; // Imported createPortal
+
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
@@ -25,6 +27,18 @@ const Header = () => {
         setIsMenuOpen(false);
     }, [location]);
 
+    // Prevent body scroll when menu is open
+    useEffect(() => {
+        if (isMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMenuOpen]);
+
     // Navigation items - Updated to include Blogs
     const navItems = [
         { name: 'Home', path: '/' },
@@ -41,7 +55,7 @@ const Header = () => {
     return (
         <>
             <motion.header
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+                className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled
                     ? 'bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 backdrop-blur-sm shadow-lg py-2 sm:py-3'
                     : 'bg-gradient-to-r from-slate-900 to-gray-900 py-3 sm:py-5'
                     }`}
@@ -123,6 +137,7 @@ const Header = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             whileTap={{ scale: 0.9 }}
+                            style={{ position: 'relative', zIndex: 101 }} // Ensure button is above overlay
                         >
                             <motion.div
                                 animate={isMenuOpen ? "open" : "closed"}
@@ -155,20 +170,22 @@ const Header = () => {
                         </motion.button>
                     </div>
                 </div>
+            </motion.header>
 
-                {/* Mobile Menu Overlay - Enhanced with smoother animations and transitions */}
+            {/* Mobile Menu Overlay - Enhanced with smoother animations and transitions */}
+            {createPortal(
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
-                            className="fixed inset-0 z-40 bg-gradient-to-br from-slate-900/98 to-gray-900/98 backdrop-blur-sm md:hidden"
+                            className="fixed inset-0 z-[90] bg-gradient-to-br from-slate-900/98 to-gray-900/98 backdrop-blur-sm md:hidden"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div className="flex flex-col h-full pt-16 sm:pt-20 px-4 sm:px-6">
+                            <div className="flex flex-col h-full pt-28 sm:pt-24 px-4 sm:px-6"> {/* Increased/Adjusted padding-top to avoid overlap with header */}
                                 <motion.nav
-                                    className="flex flex-col space-y-1 sm:space-y-2 mt-6 sm:mt-8"
+                                    className="flex flex-col space-y-1 sm:space-y-2 mt-4"
                                     initial="closed"
                                     animate="open"
                                     exit="closed"
@@ -228,8 +245,9 @@ const Header = () => {
                             </div>
                         </motion.div>
                     )}
-                </AnimatePresence>
-            </motion.header>
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* Coming Soon Popup */}
             <ComingSoonPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />

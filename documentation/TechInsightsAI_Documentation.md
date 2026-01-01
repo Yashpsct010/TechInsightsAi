@@ -110,7 +110,7 @@ src/
 
 Serves as the application's main component, handling routing and layout structure. It initializes the offline database and sets up the application structure with header, main content area, and footer.
 
-```jsx
+````jsx
 function App() {
   useEffect(() => {
     // Initialize the offline database when the app loads
@@ -139,7 +139,7 @@ function App() {
     </Router>
   );
 }
-```
+````
 
 #### BlogsPage.jsx
 
@@ -237,12 +237,14 @@ server/
 
 The main entry point for the backend application. It sets up middleware, connects to the database, and registers routes.
 
-```js
+````js
 // Simplified version
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const blogRoutes = require("./routes/blogRoutes");
+const connectToDB = require("./utils/db");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -252,47 +254,36 @@ app.use(
   cors({
     origin: ["https://techinsightsai.vercel.app"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    // Additional configuration...
+    credentials: true,
   })
 );
 
 app.use(express.json({ limit: "1mb" }));
 
-// Error handler middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({
-    error: "Server error occurred",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Internal server error",
-  });
-});
-
 // Routes
 app.use("/api/blogs", blogRoutes);
 
-// Database connection
-const connectDB = async () => {
-  // MongoDB connection logic...
-};
-
-// Server startup
+// Server startup for serverless (Vercel) vs traditional
 if (process.env.VERCEL) {
-  connectDB().catch(console.error);
+  // Connect to DB when module loads for faster cold starts
+  connectToDB().catch(console.error);
   module.exports = app;
 } else {
+  // Traditional server startup
   const startServer = async () => {
-    await connectDB();
+    await connectToDB();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      // Setup cron jobs in non-serverless environment
+      // Only run cron jobs in traditional environment
+      if (!process.env.VERCEL) {
+        const setupCronJobs = require("./cron/blogGenerator");
+        setupCronJobs();
+      }
     });
   };
   startServer().catch(console.error);
 }
-```
+````
 
 #### blogRoutes.js
 
@@ -329,42 +320,31 @@ module.exports = router;
 
 Contains the business logic for handling blog operations.
 
-```js
-// Get latest blog (or generate a new one if cache expired)
+````js
+// Get latest blog
 exports.getLatestBlog = async (req, res) => {
   try {
-    // Get requested genre (defaults to any)
     const requestedGenre = req.query.genre || null;
     const query = requestedGenre ? { genre: requestedGenre } : {};
 
-    // Find most recent blog
+    // Find the most recent blog for the given query
     const latestBlog = await Blog.findOne(query).sort({ createdAt: -1 }).exec();
 
-    const now = Date.now();
-
-    // If we have a recent blog (within cache window), return it
-    if (latestBlog && now - latestBlog.createdAt.getTime() < CACHE_WINDOW_MS) {
-      return res.json({
-        blog: latestBlog,
-        fresh: false,
-        nextRefresh: new Date(latestBlog.createdAt.getTime() + CACHE_WINDOW_MS),
-      });
+    if (!latestBlog) {
+      return res.status(404).json({ error: "No blog posts found." });
     }
 
-    // Otherwise, generate a new blog
-    const newBlog = await generateNewBlog(requestedGenre);
+    res.json({ blog: latestBlog });
 
-    return res.json({
-      blog: newBlog,
-      fresh: true,
-      nextRefresh: new Date(Date.now() + CACHE_WINDOW_MS),
-    });
   } catch (error) {
-    console.error("Error getting or generating blog:", error);
+    console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
   }
 };
-```
+/*
+Note: Generation is handled separately to keep read operations fast.
+*/
+````
 
 #### Blog.js (Model)
 
@@ -470,51 +450,53 @@ Blog {
 
 The application uses Mongoose as an ODM (Object Data Modeling) library for MongoDB. Connection handling is optimized for serverless environments:
 
-```js
-// Optimized connection function for serverless environments
-const connectToDatabase = async () => {
-  if (isConnected) {
-    console.log("Using existing database connection");
-    return;
+````js
+// In db.js
+const mongoose = require("mongoose");
+
+let cachedPromise = null;
+
+const connectToDB = async () => {
+  // If we have a cached promise, we are already connecting or are connected.
+  if (cachedPromise) {
+    return cachedPromise;
   }
 
-  // Reuse connection promise if connection is in progress
-  if (connectionPromise) {
-    console.log("Waiting for in-progress connection...");
-    await connectionPromise;
-    return;
+  // Check if we have a live connection.
+  if (mongoose.connection.readyState === 1) {
+    console.log("Using existing database connection.");
+    return Promise.resolve();
   }
 
-  // Connection logic with retries
-  const connectWithRetry = async (retryCount = 0, maxRetries = 3) => {
-    try {
-      const uri = process.env.MONGODB_URI;
+  console.log("Creating new database connection.");
+  const uri = process.env.MONGODB_URI;
 
-      mongoose.set("strictQuery", false);
+  // Set up a new connection promise
+  cachedPromise = mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 5,
+    retryWrites: true,
+    w: "majority",
+  });
 
-      await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 10000,
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000,
-        maxPoolSize: 5,
-        // Additional configuration...
-      });
+  try {
+    await cachedPromise;
+    console.log("MongoDB successfully connected.");
 
-      isConnected = true;
-      console.log("MongoDB connected successfully");
-      return true;
-    } catch (error) {
-      // Retry logic...
-    }
-  };
+    // Clear on disconnect
+    mongoose.connection.on("disconnected", () => {
+       cachedPromise = null;
+    });
 
-  // Set up connection promise
-  connectionPromise = connectWithRetry();
-  return connectionPromise;
+  } catch (error) {
+    cachedPromise = null;
+    throw error;
+  }
+
+  return cachedPromise;
 };
-```
-
----
+````
 
 ## API Integration
 
@@ -598,14 +580,14 @@ The application's internal API follows RESTful principles:
 
 The application uses IndexedDB for client-side storage to enable offline functionality:
 
-```js
+````js
 export const initializeDB = () => {
-  return new Promise((resolve, reject) => {
-    if (db) {
-      resolve(db);
-      return;
-    }
+  // Return immediately if db is already initialized (optimized for performance)
+  if (db) {
+    return Promise.resolve(db);
+  }
 
+  return new Promise((resolve, reject) => {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = (event) => {
@@ -623,18 +605,21 @@ export const initializeDB = () => {
       const database = event.target.result;
 
       if (!database.objectStoreNames.contains(BLOGS_STORE)) {
-        database.createObjectStore(BLOGS_STORE, { keyPath: "_id" });
+        // Create store and indexes
+        const store = database.createObjectStore(BLOGS_STORE, { keyPath: "_id" });
+        store.createIndex("genre", "genre", { unique: false });
+        store.createIndex("createdAt", "createdAt", { unique: false });
       }
     };
   });
 };
-```
+````
 
 ### Service Worker Configuration
 
 The service worker is configured to handle different caching strategies for various types of requests:
 
-```js
+````js
 // vite.config.js (workbox configuration)
 workbox: {
   globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
@@ -646,10 +631,6 @@ workbox: {
         cacheName: "api-cache",
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
         },
       },
     },
@@ -663,13 +644,10 @@ workbox: {
           maxEntries: 50,
           maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
         },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
         backgroundSync: {
           name: "blog-queue",
           options: {
-            maxRetentionTime: 24 * 60, // Retry for max of 24 hours
+            maxRetentionTime: 24 * 60,
           },
         },
       },
@@ -690,17 +668,10 @@ workbox: {
       // Fallback for everything else
       urlPattern: /.*$/,
       handler: "NetworkFirst",
-      options: {
-        cacheName: "fallback-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24, // 1 day
-        },
-      },
     },
   ],
 }
-```
+````
 
 ### Offline-First UX
 
