@@ -12,7 +12,7 @@ app.use(
   cors({
     origin: [
       "https://techinsightsai.vercel.app",
-      "http://localhost:5173", // Uncomment for local development
+      // "http://localhost:5173", // Uncomment for local development
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
