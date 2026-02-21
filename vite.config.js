@@ -38,7 +38,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.yourbackend\.com\/.*$/i,
+            urlPattern: /^https?:\/\/.*\/api\/(?!blogs).*$/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
@@ -53,8 +53,7 @@ export default defineConfig({
           },
           {
             // Cache your API responses
-            urlPattern:
-              /^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i,
+            urlPattern: /^https?:\/\/.*\/api\/blogs.*/i,
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "blog-api-cache",

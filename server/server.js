@@ -19,7 +19,7 @@ app.use(
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
-  })
+  }),
 );
 
 // Security headers
@@ -34,7 +34,7 @@ app.use(compression());
 const rateLimit = require("express-rate-limit");
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 50, // Reduced from 100 to 50 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: "Too many requests from this IP, please try again after 15 minutes",
@@ -42,8 +42,6 @@ const limiter = rateLimit({
 
 // Apply rate limiting to all requests
 app.use(limiter);
-
-
 
 app.use(express.json({ limit: "1mb" })); // Reduced payload limit for faster processing
 

@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './index.css';
-import { subscribeToPushNotifications } from './services/notificationService'; // Import the service
 
 // Register service worker with immediate update check
 const updateSW = registerSW({
@@ -16,16 +15,9 @@ const updateSW = registerSW({
     },
     onOfflineReady() {
         console.log('App ready to work offline');
-        // Integrate notification service here
-        subscribeToPushNotifications().then(subscribed => {
-            if (subscribed) {
-                console.log('Successfully subscribed to push notifications.');
-            } else {
-                console.log('Failed to subscribe to push notifications or permission denied.');
-            }
-        }).catch(error => {
-            console.error('Error during push notification subscription:', error);
-        });
+        // Push notification subscription should be triggered by a user action
+        // (e.g., a button click), not automatically on load, to prevent browsers 
+        // from blocking the permission prompt.
     }
 });
 

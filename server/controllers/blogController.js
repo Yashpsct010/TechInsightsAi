@@ -94,7 +94,6 @@ exports.getLatestBlog = async (req, res) => {
     }
 
     res.json({ blog: latestBlog });
-    
   } catch (error) {
     console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
@@ -173,7 +172,7 @@ async function getAiGeneratedContent(genre = null) {
     {
       headers: { "Content-Type": "application/json" },
       timeout: 25000,
-    }
+    },
   );
 
   const textResponse = response.data.candidates[0].content.parts[0].text;
@@ -183,7 +182,7 @@ async function getAiGeneratedContent(genre = null) {
   if (!jsonMatch) {
     console.error(
       "Failed to parse JSON from response:",
-      textResponse.substring(0, 500) + "..."
+      textResponse.substring(0, 500) + "...",
     );
     throw new Error("Failed to parse content from API response");
   }
@@ -197,7 +196,7 @@ async function getAiGeneratedContent(genre = null) {
       "JSON parsing error:",
       jsonError,
       "Raw match:",
-      jsonMatch[0].substring(0, 500) + "..."
+      jsonMatch[0].substring(0, 500) + "...",
     );
     throw new Error("Failed to parse JSON content: " + jsonError.message);
   }
@@ -211,18 +210,22 @@ async function getAiGeneratedContent(genre = null) {
 async function getImageForBlog(title) {
   try {
     console.log("Attempting to fetch image from Unsplash...");
-    const searchQuery = title.replace(/[^\w\s]/gi, "").split(" ").slice(0, 5).join(" ");
+    const searchQuery = title
+      .replace(/[^\w\s]/gi, "")
+      .split(" ")
+      .slice(0, 5)
+      .join(" ");
 
     const unsplashResponse = await axios.get(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
-        searchQuery
+        searchQuery,
       )}&per_page=1&orientation=landscape`,
       {
         headers: {
           Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
         },
         timeout: 10000,
-      }
+      },
     );
 
     if (
@@ -237,11 +240,11 @@ async function getImageForBlog(title) {
   } catch (imageError) {
     console.warn(
       "Unsplash image search failed, using fallback:",
-      imageError.message
+      imageError.message,
     );
     const fallbackQuery = title.split(" ").slice(0, 3).join(" ");
     const fallbackUrl = `https://source.unsplash.com/random/1200x800/?${encodeURIComponent(
-      fallbackQuery
+      fallbackQuery,
     )}`;
     console.log(`Using fallback image URL: ${fallbackUrl}`);
     return fallbackUrl;
@@ -320,7 +323,7 @@ exports.getAllBlogs = async (req, res) => {
       } else if (dateFilter === "year") {
         filterDate.setFullYear(now.getFullYear() - 1);
       }
-      
+
       // Add date condition to the query
       query.createdAt = { $gte: filterDate };
     }
@@ -375,58 +378,59 @@ exports.generateBlog = async (req, res) => {
   const requestId = Math.random().toString(36).substring(2, 10);
 
   console.log(
-    `[${requestId}] Blog generation started for genre: ${genre || "general"}`
+    `[${requestId}] Blog generation started for genre: ${genre || "general"}`,
   );
 
   try {
-    // Send immediate response to prevent timeout
-    res.status(202).json({
-      success: true,
-      message: "Blog generation started",
-      requestId: requestId,
-      genre: genre || "general",
-    });
+    // For Vercel serverless, we must await the task before sending response.
+    // If we send early response, Vercel will kill the execution.
+    const connectToDB = require("../utils/db");
+    await connectToDB();
 
-    // For Vercel serverless, we need to use a different approach than process.nextTick
-    try {
-      // Make sure we have a valid database connection
-      const connectToDB = require("../utils/db");
-      await connectToDB();
+    // Check if we already have a recent blog of this genre (within 30 minutes)
+    const existingBlog = await Blog.findOne(genre ? { genre: genre } : {}).sort(
+      { createdAt: -1 },
+    );
 
-      // Check if we already have a recent blog of this genre (within 30 minutes)
-      const existingBlog = await Blog.findOne(
-        genre ? { genre: genre } : {}
-      ).sort({ createdAt: -1 });
+    const now = Date.now();
+    const isRecent =
+      existingBlog && now - existingBlog.createdAt.getTime() < 30 * 60 * 1000;
 
-      const now = Date.now();
-      const isRecent =
-        existingBlog && now - existingBlog.createdAt.getTime() < 30 * 60 * 1000;
-
-      if (isRecent) {
-        console.log(
-          `[${requestId}] Recent blog already exists for ${
-            genre || "general"
-          }, skipping generation`
-        );
-        return;
-      }
-
-      // Directly await blog generation rather than using process.nextTick
-      const blog = await generateNewBlog(genre);
-
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
+    if (isRecent) {
       console.log(
-        `[${requestId}] Blog "${blog.title}" (${blog.genre}) saved to database in ${elapsed}s`
+        `[${requestId}] Recent blog already exists for ${
+          genre || "general"
+        }, skipping generation`,
       );
-    } catch (error) {
-      console.error(
-        `[${requestId}] Blog generation failed for ${genre || "general"}:`,
-        error
-      );
-      console.error(`Stack trace: ${error.stack}`);
+      return res.status(200).json({
+        success: true,
+        message: "Recent blog already exists, skipped generation",
+        requestId: requestId,
+      });
     }
+
+    // Directly await blog generation
+    const blog = await generateNewBlog(genre);
+
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    console.log(
+      `[${requestId}] Blog "${blog.title}" (${blog.genre}) saved to database in ${elapsed}s`,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Blog generated successfully",
+      requestId: requestId,
+      blogId: blog._id,
+      genre: blog.genre,
+      elapsed: `${elapsed}s`,
+    });
   } catch (error) {
-    console.error(`[${requestId}] Failed to start blog generation:`, error);
+    console.error(
+      `[${requestId}] Failed to start or complete blog generation:`,
+      error,
+    );
+    console.error(`Stack trace: ${error.stack}`);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message });
     }

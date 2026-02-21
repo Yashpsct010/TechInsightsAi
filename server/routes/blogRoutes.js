@@ -3,18 +3,19 @@ const router = express.Router();
 const blogController = require("../controllers/blogController");
 const mongoose = require("mongoose");
 const Blog = require("../models/Blog");
+const rateLimit = require("express-rate-limit");
 
-// Get latest blog (or generate new one if cache expired)
-router.get("/latest", blogController.getLatestBlog);
-
-// Get all blogs with pagination
-router.get("/all", blogController.getAllBlogs);
-
-// Generate a new blog (protected, for admin or cron job)
-router.post("/generate", blogController.generateBlog);
-
-// Get a single blog by ID - new endpoint
-router.get("/:id", blogController.getBlogById);
+// Strict rate limiter for the generate endpoint
+const generateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 requests per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error:
+      "Too many generation requests from this IP. Please try again after an hour",
+  },
+});
 
 // Lightweight diagnostic endpoint for GitHub Actions
 router.get("/diagnose", async (req, res) => {
@@ -54,5 +55,17 @@ router.get("/cors-test", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Get latest blog (or generate new one if cache expired)
+router.get("/latest", blogController.getLatestBlog);
+
+// Get all blogs with pagination
+router.get("/all", blogController.getAllBlogs);
+
+// Generate a new blog (protected, for admin or cron job, with strict rate limiting)
+router.post("/generate", generateLimiter, blogController.generateBlog);
+
+// Get a single blog by ID - new endpoint
+router.get("/:id", blogController.getBlogById);
 
 module.exports = router;
