@@ -79,13 +79,13 @@ define(['./workbox-93931357'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "0.g6dopqkcjh8"
+    "revision": "0.uefpec5urgg"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(/^https:\/\/api\.yourbackend\.com\/.*$/i, new workbox.NetworkFirst({
+  workbox.registerRoute(/^https?:\/\/.*\/api\/(?!blogs).*$/i, new workbox.NetworkFirst({
     "cacheName": "api-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
@@ -94,7 +94,7 @@ define(['./workbox-93931357'], (function (workbox) { 'use strict';
       statuses: [0, 200]
     })]
   }), 'GET');
-  workbox.registerRoute(/^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i, new workbox.StaleWhileRevalidate({
+  workbox.registerRoute(/^https?:\/\/.*\/api\/blogs.*/i, new workbox.StaleWhileRevalidate({
     "cacheName": "blog-api-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,

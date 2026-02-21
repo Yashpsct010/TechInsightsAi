@@ -8,9 +8,12 @@ import Blog from './components/Blog';
 import About from './components/About';
 import BlogsPage from './components/BlogsPage';
 import BlogDetailPage from './components/BlogDetailPage';
+import Login from './components/Login';
+import Register from './components/Register';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import OfflineNotice from './components/OfflineNotice';
 import { initializeDB } from './services/offlineDataService';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   useEffect(() => {
@@ -19,25 +22,29 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <OfflineNotice />
-        <Header />
-        <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blogs" element={<BlogsPage />} />
-              <Route path="/blog/:id" element={<BlogDetailPage />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-        <Footer />
-        <PWAInstallPrompt />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <OfflineNotice />
+          <Header />
+          <main className="flex-grow">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blogs" element={<BlogsPage />} />
+                <Route path="/blog/:id" element={<BlogDetailPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Routes>
+            </AnimatePresence>
+          </main>
+          <Footer />
+          <PWAInstallPrompt />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

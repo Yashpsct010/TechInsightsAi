@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaLightbulb } from 'react-icons/fa';
+import { FaLightbulb, FaUserCircle } from 'react-icons/fa';
 import ComingSoonPopup from './ComingSoonPopup';
-
-import { createPortal } from 'react-dom'; // Imported createPortal
+import { useAuth } from '../context/AuthContext';
+import { createPortal } from 'react-dom';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
     // Handle scroll effect
     useEffect(() => {
@@ -25,6 +29,7 @@ const Header = () => {
     // Close mobile menu when route changes
     useEffect(() => {
         setIsMenuOpen(false);
+        setShowProfileMenu(false);
     }, [location]);
 
     // Prevent body scroll when menu is open
@@ -39,7 +44,7 @@ const Header = () => {
         };
     }, [isMenuOpen]);
 
-    // Navigation items - Updated to include Blogs
+    // Navigation items
     const navItems = [
         { name: 'Home', path: '/' },
         { name: 'Latest Blog', path: '/blog' },
@@ -50,6 +55,11 @@ const Header = () => {
     const handleSubscribeClick = (e) => {
         e.preventDefault();
         setIsPopupOpen(true);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
     };
 
     return (
@@ -85,8 +95,8 @@ const Header = () => {
                             </Link>
                         </motion.div>
 
-                        {/* Desktop Navigation - Enhanced with better hover effects */}
-                        <nav className="hidden md:flex items-center space-x-1">
+                        {/* Desktop Navigation */}
+                        <nav className="hidden md:flex items-center space-x-1 lg:space-x-3">
                             {navItems.map((item, index) => (
                                 <motion.div
                                     key={item.name}
@@ -97,7 +107,7 @@ const Header = () => {
                                     <NavLink
                                         to={item.path}
                                         className={({ isActive }) => `
-                                            relative px-4 lg:px-5 py-2 rounded-md text-sm font-medium 
+                                            relative px-3 lg:px-4 py-2 rounded-md text-sm font-medium 
                                             ${isActive ? 'text-cyan-400' : 'text-gray-100 hover:text-cyan-300'}
                                         `}
                                     >
@@ -119,10 +129,68 @@ const Header = () => {
                                 </motion.div>
                             ))}
 
+                            <div className="h-6 w-px bg-gray-700 mx-2"></div>
+
+                            {user ? (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                        className="flex items-center gap-2 text-gray-200 hover:text-white transition-colors py-2 px-3 rounded-md hover:bg-slate-800/50"
+                                    >
+                                        <FaUserCircle className="text-xl text-cyan-400" />
+                                        <span className="text-sm font-medium hidden lg:block">
+                                            {user.email.split('@')[0]}
+                                        </span>
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showProfileMenu && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 overflow-hidden"
+                                            >
+                                                <div className="px-4 py-2 border-b border-slate-700">
+                                                    <p className="text-xs text-gray-400">Signed in as</p>
+                                                    <p className="text-sm font-semibold text-white truncate">{user.email}</p>
+                                                    {user.role === 'admin' && (
+                                                        <span className="inline-block mt-1 px-2 py-0.5 bg-fuchsia-900/50 text-fuchsia-300 text-xs rounded border border-fuchsia-500/30">
+                                                            Admin
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700/50 transition-colors mt-1"
+                                                >
+                                                    Sign out
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ) : (
+                                <div className="flex items-center space-x-2">
+                                    <Link
+                                        to="/login"
+                                        className="text-gray-200 hover:text-cyan-300 px-3 py-2 text-sm font-medium transition-colors"
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        to="/register"
+                                        className="bg-cyan-600/20 text-cyan-400 border border-cyan-500/50 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-cyan-500 hover:text-white transition-all shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                                    >
+                                        Sign up
+                                    </Link>
+                                </div>
+                            )}
+
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="ml-2 lg:ml-4 bg-fuchsia-600 text-white px-4 lg:px-5 py-1.5 lg:py-2 rounded-full font-medium text-sm shadow-md shadow-fuchsia-700/30 hover:shadow-lg hover:bg-fuchsia-500 transition-all border border-fuchsia-400/50"
+                                className="hidden lg:block ml-4 bg-fuchsia-600 text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-md shadow-fuchsia-700/30 hover:shadow-lg hover:bg-fuchsia-500 transition-all border border-fuchsia-400/50"
                                 onClick={handleSubscribeClick}
                             >
                                 Subscribe

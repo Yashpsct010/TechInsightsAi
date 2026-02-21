@@ -106,7 +106,6 @@ exports.getLatestBlog = async (req, res) => {
  * @returns {Promise<object>} The parsed JSON content from the AI response.
  */
 async function getAiGeneratedContent(genre = null) {
-  const geminiApiUrl = process.env.GEMINI_API_URL;
   const geminiApiKey = process.env.GEMINI_API_KEY;
 
   const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
@@ -166,8 +165,13 @@ async function getAiGeneratedContent(genre = null) {
     },
   };
 
+  // We are extracting the base URL from the env, or assuming a default structure
+  // Explicitly enforcing the gemini-2.5-flash-lite model to avoid quota limits
+  const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
+  const modelToUse = "gemini-2.5-flash-lite";
+
   const response = await axios.post(
-    `${geminiApiUrl}?key=${geminiApiKey}`,
+    `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
     requestBody,
     {
       headers: { "Content-Type": "application/json" },

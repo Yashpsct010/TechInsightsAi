@@ -12,7 +12,7 @@ app.use(
   cors({
     origin: [
       "https://techinsightsai.vercel.app",
-      // "http://localhost:5173", // Uncomment for local development
+      "http://localhost:5173", // Uncomment for local development
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -60,6 +60,7 @@ app.use((err, req, res, next) => {
 const connectToDB = require("./utils/db");
 
 // Define routes with fast timeouts
+app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", blogRoutes);
 
 // Health check route - simplified

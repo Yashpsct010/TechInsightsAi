@@ -4,11 +4,25 @@ const blogController = require("../controllers/blogController");
 const mongoose = require("mongoose");
 const Blog = require("../models/Blog");
 const rateLimit = require("express-rate-limit");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 // Strict rate limiter for the generate endpoint
 const generateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // Limit each IP to 5 requests per hour
+  skip: (req) => {
+    // Bypass rate limit for authorized cron jobs
+    const authHeader = req.headers.authorization;
+    if (
+      authHeader &&
+      authHeader.startsWith("Bearer ") &&
+      process.env.CRON_SECRET
+    ) {
+      const token = authHeader.split(" ")[1];
+      return token === process.env.CRON_SECRET;
+    }
+    return false;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -63,7 +77,13 @@ router.get("/latest", blogController.getLatestBlog);
 router.get("/all", blogController.getAllBlogs);
 
 // Generate a new blog (protected, for admin or cron job, with strict rate limiting)
-router.post("/generate", generateLimiter, blogController.generateBlog);
+router.post(
+  "/generate",
+  protect,
+  admin,
+  generateLimiter,
+  blogController.generateBlog,
+);
 
 // Get a single blog by ID - new endpoint
 router.get("/:id", blogController.getBlogById);
