@@ -1,6 +1,13 @@
 const mongoose = require("mongoose");
 const Blog = require("../models/Blog");
 const axios = require("axios");
+const Parser = require("rss-parser");
+
+const parser = new Parser({
+  customFields: {
+    item: ["description", "content:encoded", "pubDate"],
+  },
+});
 
 // Cache window in milliseconds
 const CACHE_WINDOW_MS = 60 * 60 * 1000;
@@ -101,6 +108,83 @@ exports.getLatestBlog = async (req, res) => {
 };
 
 /**
+ * Executes a promise-returning function with exponential backoff retries.
+ * @param {Function} fn - The function to execute.
+ * @param {number} maxRetries - Maximum number of retries.
+ * @param {number} baseDelayMs - Base delay in milliseconds.
+ * @returns {Promise<any>}
+ */
+async function withRetries(fn, maxRetries = 3, baseDelayMs = 2000) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (error) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        throw error;
+      }
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      console.warn(
+        `Attempt ${attempt} failed. Retrying in ${delay}ms... Error: ${error.message}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+/**
+ * Fetches recent news headlines and summaries from RSS feeds based on genre.
+ * @param {string | null} genre - The genre of the blog.
+ * @returns {Promise<string>} A string containing the extracted news context.
+ */
+async function fetchRecentNews(genre) {
+  const feeds = {
+    general: ["https://techcrunch.com/feed/"],
+    "ai-ml": ["https://www.artificialintelligence-news.com/feed/"],
+    cybersecurity: ["https://thehackernews.com/rss"],
+    coding: ["https://dev.to/feed"],
+    "emerging-tech": ["https://www.wired.com/feed/rss"],
+    "tech-news": [
+      "https://techcrunch.com/feed/",
+      "https://www.theverge.com/rss/index.xml",
+    ],
+  };
+
+  const selectedFeeds = feeds[genre] || feeds["general"];
+  let newsContext =
+    "Here are some of the latest advancements and news articles from the last 48 hours to ground your blog post:\n\n";
+  let hasNews = false;
+
+  for (const feedUrl of selectedFeeds) {
+    try {
+      console.log(`Fetching RSS feed for context: ${feedUrl}`);
+      const feed = await parser.parseURL(feedUrl);
+
+      // Get the top 3 most recent items
+      const recentItems = feed.items.slice(0, 3);
+
+      recentItems.forEach((item) => {
+        hasNews = true;
+        let summary = "No description available.";
+        if (item.contentSnippet) {
+          summary = item.contentSnippet.substring(0, 300) + "...";
+        } else if (item.description) {
+          summary = item.description.substring(0, 300) + "...";
+        }
+
+        newsContext += `- Title: ${item.title}\n`;
+        newsContext += `  Summary: ${summary}\n\n`;
+      });
+    } catch (error) {
+      console.warn(`Failed to fetch RSS feed ${feedUrl}:`, error.message);
+    }
+  }
+
+  return hasNews ? newsContext : "";
+}
+
+/**
  * Fetches AI-generated blog content from the Gemini API.
  * @param {string | null} genre - The specific genre to request from the AI.
  * @returns {Promise<object>} The parsed JSON content from the AI response.
@@ -108,9 +192,14 @@ exports.getLatestBlog = async (req, res) => {
 async function getAiGeneratedContent(genre = null) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
 
+  // 1. Fetch real-world advancements context
+  const newsContext = await fetchRecentNews(genre);
+
   const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
         ${genre ? `Focus specifically on ${genre}. ` : ""}
         You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable for tech enthusiasts, developers, and industry professionals.
+
+        ${newsContext ? `CRITICAL INSTRUCTION - BASE YOUR BLOG ON THESE RECENT ADVANCEMENTS: \n${newsContext}` : ""}
 
         Blog Focus Areas:
         Your article should include at least three of the following topics:
@@ -170,13 +259,19 @@ async function getAiGeneratedContent(genre = null) {
   const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
   const modelToUse = "gemini-2.5-flash-lite";
 
-  const response = await axios.post(
-    `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
-    requestBody,
-    {
-      headers: { "Content-Type": "application/json" },
-      timeout: 25000,
+  const response = await withRetries(
+    async () => {
+      return await axios.post(
+        `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
+        requestBody,
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 25000,
+        },
+      );
     },
+    3,
+    2000,
   );
 
   const textResponse = response.data.candidates[0].content.parts[0].text;
@@ -220,16 +315,22 @@ async function getImageForBlog(title) {
       .slice(0, 5)
       .join(" ");
 
-    const unsplashResponse = await axios.get(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
-        searchQuery,
-      )}&per_page=1&orientation=landscape`,
-      {
-        headers: {
-          Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
-        },
-        timeout: 10000,
+    const unsplashResponse = await withRetries(
+      async () => {
+        return await axios.get(
+          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+            searchQuery,
+          )}&per_page=1&orientation=landscape`,
+          {
+            headers: {
+              Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+            },
+            timeout: 10000,
+          },
+        );
       },
+      2,
+      1000,
     );
 
     if (
@@ -299,13 +400,19 @@ exports.getAllBlogs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const { genre, searchTerm, dateFilter } = req.query;
+    const { genre, preferredGenres, searchTerm, dateFilter } = req.query;
 
     // Build the query object based on request parameters
     const query = {};
 
     if (genre) {
       query.genre = genre;
+    } else if (preferredGenres) {
+      // Filter by user preferences if provided
+      const genresArray = preferredGenres.split(",").map((g) => g.trim());
+      if (genresArray.length > 0) {
+        query.genre = { $in: genresArray };
+      }
     }
 
     if (searchTerm) {

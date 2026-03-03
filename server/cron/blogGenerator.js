@@ -9,16 +9,16 @@ module.exports = function setupCronJobs() {
   // Only run cron in development
   if (process.env.NODE_ENV === "production") {
     console.log(
-      "Skipping cron job setup in production (handled by GitHub Actions)"
+      "Skipping cron job setup in production (handled by GitHub Actions)",
     );
     return;
   }
 
-  // Schedule: "0 */3 * * *" = every 3 hours
-  cron.schedule("0 */3 * * *", async () => {
+  // Schedule: "0 0 * * *" = every day at midnight (system time)
+  cron.schedule("0 0 * * *", async () => {
     console.log(
       "Running scheduled blog generation (development):",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
 
     try {
@@ -30,7 +30,7 @@ module.exports = function setupCronJobs() {
           headers: {
             Authorization: `Bearer ${process.env.CRON_SECRET}`,
           },
-        }
+        },
       );
 
       console.log("Successfully generated new blog via cron job");

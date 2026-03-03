@@ -8,10 +8,14 @@ import Blog from './components/Blog';
 import About from './components/About';
 import BlogsPage from './components/BlogsPage';
 import BlogDetailPage from './components/BlogDetailPage';
+import Jobs from './components/Jobs';
 import Login from './components/Login';
 import Register from './components/Register';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import OfflineNotice from './components/OfflineNotice';
+import ProtectedRoute from './components/ProtectedRoute';
+import Profile from './components/Profile';
+import Bookmarks from './components/Bookmarks';
 import { initializeDB } from './services/offlineDataService';
 import { AuthProvider } from './context/AuthContext';
 
@@ -34,9 +38,26 @@ function App() {
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/blogs" element={<BlogsPage />} />
+                <Route path="/jobs" element={<Jobs />} />
                 <Route path="/blog/:id" element={<BlogDetailPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bookmarks"
+                  element={
+                    <ProtectedRoute>
+                      <Bookmarks />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </AnimatePresence>
           </main>

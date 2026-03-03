@@ -9,5 +9,8 @@ router.post("/login", authController.loginUser);
 
 // Private routes (require valid JWT)
 router.get("/profile", protect, authController.getUserProfile);
+router.put("/preferences", protect, authController.updatePreferences);
+router.put("/bookmarks", protect, authController.toggleBookmark);
+router.get("/bookmarks", protect, authController.getBookmarks);
 
 module.exports = router;

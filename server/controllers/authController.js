@@ -43,12 +43,10 @@ exports.registerUser = async (req, res) => {
     }
   } catch (error) {
     console.error("Error in register:", error);
-    res
-      .status(500)
-      .json({
-        message: "Server error during registration",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error during registration",
+      error: error.message,
+    });
   }
 };
 
@@ -107,5 +105,107 @@ exports.getUserProfile = async (req, res) => {
   } catch (error) {
     console.error("Error fetching profile:", error);
     res.status(500).json({ message: "Server error fetching profile" });
+  }
+};
+
+/**
+ * @desc    Update user preferences
+ * @route   PUT /api/auth/preferences
+ * @access  Private
+ */
+exports.updatePreferences = async (req, res) => {
+  try {
+    const { preferences } = req.body;
+
+    // Validate that preferences is an array
+    if (!Array.isArray(preferences)) {
+      return res.status(400).json({ message: "Preferences must be an array" });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.preferences = preferences;
+      const updatedUser = await user.save();
+
+      res.json({
+        message: "Preferences updated successfully",
+        preferences: updatedUser.preferences,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error updating preferences:", error);
+    res.status(500).json({ message: "Server error updating preferences" });
+  }
+};
+
+/**
+ * @desc    Toggle bookmark for a specific blog
+ * @route   PUT /api/auth/bookmarks
+ * @access  Private
+ */
+exports.toggleBookmark = async (req, res) => {
+  try {
+    const { blogId } = req.body;
+
+    if (!blogId) {
+      return res.status(400).json({ message: "Blog ID is required" });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      // Check if bookmark already exists
+      const isBookmarked = user.bookmarks.some(
+        (id) => id.toString() === blogId,
+      );
+
+      if (isBookmarked) {
+        // Remove bookmark
+        user.bookmarks = user.bookmarks.filter(
+          (id) => id.toString() !== blogId,
+        );
+      } else {
+        // Add bookmark
+        user.bookmarks.push(blogId);
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        message: isBookmarked ? "Bookmark removed" : "Bookmark added",
+        bookmarks: updatedUser.bookmarks,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error toggling bookmark:", error);
+    res.status(500).json({ message: "Server error toggling bookmark" });
+  }
+};
+
+/**
+ * @desc    Get user's bookmarked blogs
+ * @route   GET /api/auth/bookmarks
+ * @access  Private
+ */
+exports.getBookmarks = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate({
+      path: "bookmarks",
+      select: "title image imageAlt genre createdAt",
+    });
+
+    if (user) {
+      res.json(user.bookmarks);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching bookmarks:", error);
+    res.status(500).json({ message: "Server error fetching bookmarks" });
   }
 };

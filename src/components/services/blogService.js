@@ -1,10 +1,9 @@
-import APIMonitor from '../utils/APIMonitor';
+import APIMonitor from "../utils/APIMonitor";
 import {
   saveLatestBlog,
   getLatestBlog,
   saveBlog,
   getBlog,
-  getAllBlogs,
 } from "../../services/offlineDataService";
 
 /**
@@ -70,7 +69,7 @@ export async function fetchLatestBlog(genre = null) {
         retries++;
         const backoffTime = APIMonitor.getBackoffTime(endpoint);
         console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        await new Promise((resolve) => setTimeout(resolve, backoffTime));
         continue; // Try again
       } else {
         // If offline or max retries reached, try to get from cache as fallback
@@ -99,7 +98,8 @@ export async function fetchBlogArchive(
   limit = 10,
   genre = null,
   searchTerm = null,
-  dateFilter = null
+  dateFilter = null,
+  preferredGenres = null,
 ) {
   const url = new URL(`${API_URL}/blogs/all`);
   url.searchParams.append("page", page.toString());
@@ -113,6 +113,9 @@ export async function fetchBlogArchive(
   }
   if (dateFilter) {
     url.searchParams.append("dateFilter", dateFilter);
+  }
+  if (preferredGenres && preferredGenres.length > 0) {
+    url.searchParams.append("preferredGenres", preferredGenres.join(","));
   }
 
   const endpoint = url.toString(); // Use the full URL as the endpoint identifier
@@ -141,7 +144,7 @@ export async function fetchBlogArchive(
         retries++;
         const backoffTime = APIMonitor.getBackoffTime(endpoint);
         console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        await new Promise((resolve) => setTimeout(resolve, backoffTime));
         continue; // Try again
       } else {
         throw error; // Re-throw if max retries reached
@@ -195,7 +198,7 @@ export async function fetchBlogById(id) {
         retries++;
         const backoffTime = APIMonitor.getBackoffTime(endpoint);
         console.log(`Retrying ${endpoint} in ${backoffTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        await new Promise((resolve) => setTimeout(resolve, backoffTime));
         continue; // Try again
       } else {
         // If offline or max retries reached, try to get from cache as fallback

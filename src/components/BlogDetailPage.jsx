@@ -3,15 +3,29 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatDate } from './utils/formatters';
 import { useBlogById } from './hooks/useBlogById';
+import { useAuth } from '../context/AuthContext';
 
 const BlogDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { blog, loading, error } = useBlogById(id);
+    const { user, toggleBookmark } = useAuth();
 
     const handleBackClick = () => {
         navigate('/blogs');
     };
+
+    const handleBookmark = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        await toggleBookmark(blog._id);
+    };
+
+    const isBookmarked = user?.bookmarks?.includes(blog?._id);
 
     return (
         <motion.div
@@ -56,14 +70,32 @@ const BlogDetailPage = () => {
                     transition={{ duration: 0.5 }}
                     className="bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-700"
                 >
-                    <motion.h1
-                        className="text-2xl sm:text-3xl lg:text-4xl font-bold px-4 sm:px-6 pt-6 pb-3 text-white"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        {blog.title}
-                    </motion.h1>
+                    <div className="flex justify-between items-start px-4 sm:px-6 pt-6 pb-3">
+                        <motion.h1
+                            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white flex-grow pr-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            {blog.title}
+                        </motion.h1>
+
+                        <button
+                            onClick={handleBookmark}
+                            className={`p-2 rounded-full transition-colors flex-shrink-0 ${isBookmarked ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-400/10'}`}
+                            title={isBookmarked ? "Remove Bookmark" : "Save Bookmark"}
+                        >
+                            {isBookmarked ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
 
                     <motion.div
                         className="px-4 sm:px-6 pb-4 text-sm text-gray-300 flex flex-wrap gap-2 sm:gap-4"

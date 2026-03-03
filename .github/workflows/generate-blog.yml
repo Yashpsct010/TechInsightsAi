@@ -2,7 +2,7 @@ name: Generate Blog Content
 
 on:
   schedule:
-    - cron: "0 */3 * * *" # Run every 3 hours
+    - cron: "0 0 * * *" # Run every day at midnight UTC
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
@@ -21,9 +21,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false # Ensures all jobs run even if one fails
+      max-parallel: 1
       matrix:
         # Defines the list of genres to generate
-        genre: ['general', 'ai-ml', 'cybersecurity', 'coding', 'emerging-tech', 'tech-news']
+        genre:
+          [
+            "general",
+            "ai-ml",
+            "cybersecurity",
+            "coding",
+            "emerging-tech",
+            "tech-news",
+          ]
     steps:
       - name: Trigger Blog Generation for ${{ matrix.genre }}
         run: |
@@ -32,9 +41,9 @@ jobs:
           if [ "${{ matrix.genre }}" != "general" ]; then
             JSON_PAYLOAD=$(printf '{"genre":"%s"}' "${{ matrix.genre }}")
           fi
-          
+
           echo "Generating blog for genre: ${{ matrix.genre }}"
-          
+
           # Send the API request to trigger blog generation
           curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \

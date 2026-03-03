@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import authService from '../services/authService';
 
@@ -69,6 +70,28 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updatePreferences = async (preferences) => {
+        try {
+            const updatedPreferences = await authService.updatePreferences(preferences);
+            setUser(prev => ({ ...prev, preferences: updatedPreferences }));
+            return true;
+        } catch (err) {
+            setError(err.message);
+            return false;
+        }
+    };
+
+    const toggleBookmark = async (blogId) => {
+        try {
+            const updatedBookmarks = await authService.toggleBookmark(blogId);
+            setUser(prev => ({ ...prev, bookmarks: updatedBookmarks }));
+            return true;
+        } catch (err) {
+            setError(err.message);
+            return false;
+        }
+    };
+
     const value = {
         user,
         loading,
@@ -76,6 +99,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updatePreferences,
+        toggleBookmark,
     };
 
     return (

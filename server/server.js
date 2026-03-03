@@ -1,6 +1,5 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const blogRoutes = require("./routes/blogRoutes");
 
@@ -46,7 +45,8 @@ app.use(limiter);
 app.use(express.json({ limit: "1mb" })); // Reduced payload limit for faster processing
 
 // Simple error handler middleware
-app.use((err, req, res, next) => {
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
   console.error("Server error:", err);
   res.status(500).json({
     error: "Server error occurred",
@@ -62,6 +62,7 @@ const connectToDB = require("./utils/db");
 // Define routes with fast timeouts
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", blogRoutes);
+app.use("/api/jobs", require("./routes/jobRoutes"));
 
 // Health check route - simplified
 app.get("/health", (req, res) => res.json({ status: "ok" }));

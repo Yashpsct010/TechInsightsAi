@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchBlogArchive } from './services/blogService';
 import { formatDate } from './utils/formatters';
+import { useAuth } from '../context/AuthContext';
+import authService from '../services/authService';
 
 const BlogsPage = () => {
+    const { user } = useAuth();
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,12 +15,13 @@ const BlogsPage = () => {
     const [totalPages, setTotalPages] = useState(1);
 
     // Filter states
-    const [selectedGenre, setSelectedGenre] = useState(null);
+    const defaultGenre = user && user.preferences?.length > 0 ? 'for-you' : 'all';
+    const [selectedGenre, setSelectedGenre] = useState(defaultGenre);
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'week', 'month', 'year'
     const [searchTerm, setSearchTerm] = useState('');
 
     // Available genre filters
-    const genres = [
+    const baseGenres = [
         { id: 'all', name: 'All Topics' },
         { id: 'tech-news', name: 'Tech News' },
         { id: 'ai-ml', name: 'AI & ML' },
@@ -26,6 +30,10 @@ const BlogsPage = () => {
         { id: 'emerging-tech', name: 'Emerging Tech' },
         { id: 'general', name: 'General Tech' }
     ];
+
+    const genres = user && user.preferences?.length > 0
+        ? [{ id: 'for-you', name: 'For You ⭐' }, ...baseGenres]
+        : baseGenres;
 
     // Date filter options
     const dateFilters = [
@@ -37,7 +45,8 @@ const BlogsPage = () => {
 
     useEffect(() => {
         fetchBlogs();
-    }, [selectedGenre, dateFilter, currentPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedGenre, dateFilter, currentPage, user?.preferences]);
 
     const fetchBlogs = async () => {
         try {
@@ -45,12 +54,13 @@ const BlogsPage = () => {
             setError(null);
 
             // Prepare filter values to be sent to the backend
-            const genre = selectedGenre === 'all' ? null : selectedGenre;
+            const genre = (selectedGenre === 'all' || selectedGenre === 'for-you') ? null : selectedGenre;
             const term = searchTerm.trim() ? searchTerm.trim() : null;
             const date = dateFilter === 'all' ? null : dateFilter;
+            const preferredGenres = selectedGenre === 'for-you' && user ? user.preferences : null;
 
             // Fetch blogs with all filters sent to the backend for processing
-            const data = await fetchBlogArchive(currentPage, 9, genre, term, date);
+            const data = await fetchBlogArchive(currentPage, 9, genre, term, date, preferredGenres);
 
             setBlogs(data.blogs);
             setTotalPages(data.totalPages);
@@ -79,6 +89,21 @@ const BlogsPage = () => {
 
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
+    };
+
+    const handleBookmark = async (e, blogId) => {
+        e.preventDefault(); // Prevent Link navigation
+        e.stopPropagation();
+        if (!user) {
+            // Optional: You could redirect the user or show a toast
+            return;
+        }
+        try {
+            await authService.toggleBookmark(blogId);
+            // Updating user bookmarks in context will trigger re-render
+        } catch (err) {
+            console.error("Failed to toggle bookmark", err);
+        }
     };
 
     // Animation variants
@@ -113,7 +138,7 @@ const BlogsPage = () => {
             className="container mx-auto px-4 py-8 max-w-6xl pt-20 md:pt-28"
         >
             <div className="mb-8">
-                <h1 className="text-3xl py-2 sm:text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">
+                <h1 className="text-3xl py-2 sm:text-4xl font-bold mb-6 bg-linear-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">
                     All Tech Blogs
                 </h1>
 
@@ -125,7 +150,7 @@ const BlogsPage = () => {
                             <input
                                 type="text"
                                 placeholder="Search blogs..."
-                                className="flex-grow px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
+                                className="grow px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-400"
                                 value={searchTerm}
                                 onChange={handleSearchChange}
                             />
@@ -230,42 +255,65 @@ const BlogsPage = () => {
                             animate="show"
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
-                            {blogs.map((blog) => (
-                                <motion.div
-                                    key={blog._id}
-                                    variants={item}
-                                    className="bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-slate-700"
-                                >
-                                    <Link to={`/blog/${blog._id}`} className="block h-full">
-                                        <div className="h-48 overflow-hidden">
-                                            <img
-                                                src={blog.image}
-                                                alt={blog.imageAlt || blog.title}
-                                                className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                            />
-                                        </div>
-                                        <div className="p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 bg-cyan-900/50 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
-                                                    {blog.genre.charAt(0).toUpperCase() + blog.genre.slice(1).replace('-', ' ')}
-                                                </span>
-                                                <span className="text-gray-400 text-xs">
-                                                    {formatDate(blog.createdAt)}
-                                                </span>
+                            {blogs.map((blog) => {
+                                const isBookmarked = user?.bookmarks?.includes(blog._id);
+                                return (
+                                    <motion.div
+                                        key={blog._id}
+                                        variants={item}
+                                        className="bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-slate-700 relative"
+                                    >
+                                        {user && (
+                                            <button
+                                                onClick={(e) => handleBookmark(e, blog._id)}
+                                                className={`absolute top-2 right-2 p-2 rounded-full z-10 backdrop-blur-sm transition-colors ${isBookmarked
+                                                    ? 'text-yellow-400 bg-black/40 hover:bg-black/60'
+                                                    : 'text-white/70 bg-black/20 hover:text-yellow-400 hover:bg-black/40'
+                                                    }`}
+                                                title={isBookmarked ? "Remove Bookmark" : "Save Bookmark"}
+                                            >
+                                                {isBookmarked ? (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        )}
+                                        <Link to={`/blog/${blog._id}`} className="block h-full">
+                                            <div className="h-48 overflow-hidden">
+                                                <img
+                                                    src={blog.image}
+                                                    alt={blog.imageAlt || blog.title}
+                                                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                                />
                                             </div>
-                                            <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-white">
-                                                {blog.title}
-                                            </h2>
-                                            <div className="mt-4 flex justify-between items-center">
-                                                <span className="text-cyan-400 text-sm font-medium">Read more</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                </svg>
+                                            <div className="p-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-2 py-0.5 bg-cyan-900/50 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
+                                                        {blog.genre.charAt(0).toUpperCase() + blog.genre.slice(1).replace('-', ' ')}
+                                                    </span>
+                                                    <span className="text-gray-400 text-xs">
+                                                        {formatDate(blog.createdAt)}
+                                                    </span>
+                                                </div>
+                                                <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-white">
+                                                    {blog.title}
+                                                </h2>
+                                                <div className="mt-4 flex justify-between items-center">
+                                                    <span className="text-cyan-400 text-sm font-medium">Read more</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
+                                        </Link>
+                                    </motion.div>
+                                )
+                            })}
                         </motion.div>
                     )}
                 </AnimatePresence>

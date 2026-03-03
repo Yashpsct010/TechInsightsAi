@@ -49,6 +49,7 @@ const Header = () => {
         { name: 'Home', path: '/' },
         { name: 'Latest Blog', path: '/blog' },
         { name: 'All Blogs', path: '/blogs' },
+        { name: 'Latest Jobs', path: '/jobs' },
         { name: 'About', path: '/about' }
     ];
 
@@ -160,12 +161,28 @@ const Header = () => {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <button
-                                                    onClick={handleLogout}
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700/50 transition-colors mt-1"
-                                                >
-                                                    Sign out
-                                                </button>
+                                                <div className="py-1">
+                                                    <Link
+                                                        to="/profile"
+                                                        onClick={() => setShowProfileMenu(false)}
+                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                                                    >
+                                                        Your Profile
+                                                    </Link>
+                                                    <Link
+                                                        to="/bookmarks"
+                                                        onClick={() => setShowProfileMenu(false)}
+                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                                                    >
+                                                        Bookmarks
+                                                    </Link>
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700/50 transition-colors"
+                                                    >
+                                                        Sign out
+                                                    </button>
+                                                </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
@@ -285,6 +302,29 @@ const Header = () => {
                                             </NavLink>
                                         </motion.div>
                                     ))}
+                                    {user && (
+                                        <motion.div
+                                            key="Bookmarks"
+                                            variants={{
+                                                open: { opacity: 1, y: 0 },
+                                                closed: { opacity: 0, y: 20 }
+                                            }}
+                                            transition={{ duration: 0.4 }}
+                                        >
+                                            <NavLink
+                                                to="/bookmarks"
+                                                className={({ isActive }) =>
+                                                    `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-medium rounded-xl transition-colors ${isActive
+                                                        ? 'bg-fuchsia-900/20 text-cyan-400 border border-fuchsia-500/30'
+                                                        : 'text-gray-100 hover:bg-slate-800/50 hover:text-cyan-300'
+                                                    }`
+                                                }
+                                                onClick={() => setIsMenuOpen(false)}
+                                            >
+                                                Bookmarks
+                                            </NavLink>
+                                        </motion.div>
+                                    )}
                                     <motion.div
                                         variants={{
                                             open: { opacity: 1, y: 0 },
