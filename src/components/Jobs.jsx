@@ -70,7 +70,7 @@ const Jobs = () => {
                 params.employment_types = typeMap[filterType];
             }
 
-            const response = await axios.get(`${apiUrl}/api/jobs/search`, { params });
+            const response = await axios.get(`${apiUrl}/jobs/search`, { params });
             if (response.data.success && response.data.data) {
                 setJobs(response.data.data);
             }
