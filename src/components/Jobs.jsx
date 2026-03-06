@@ -51,7 +51,7 @@ const Jobs = () => {
         setSearchError(null);
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
             // Build the string combined with roles if it's not "All"
             let queryStr = finalQuery;
@@ -99,7 +99,7 @@ const Jobs = () => {
         formData.append("resume", file);
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const response = await axios.post(`${apiUrl}/api/jobs/extract-skills`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
