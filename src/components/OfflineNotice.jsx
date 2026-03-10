@@ -25,10 +25,10 @@ const OfflineNotice = () => {
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -50, opacity: 0 }}
-                    className="fixed top-0 left-0 right-0 bg-fuchsia-700 text-white p-2 z-50 flex items-center justify-center border-b border-fuchsia-500/30"
+                    className="fixed top-0 left-0 right-0 bg-red-500/10 backdrop-blur-md text-red-500 p-2.5 z-50 flex items-center justify-center border-b border-red-500/30 shadow-[0_4px_30px_rgba(239,68,68,0.15)] font-mono text-xs sm:text-sm uppercase tracking-wider font-bold"
                 >
-                    <FaExclamationTriangle className="mr-2 text-lime-400" />
-                    <span>You're currently offline. Some features may be limited.</span>
+                    <FaExclamationTriangle className="mr-3 text-red-500 animate-pulse" />
+                    <span>System_Offline // Connection Lost. Functionality Limited.</span>
                 </motion.div>
             )}
         </AnimatePresence>

@@ -58,7 +58,6 @@ TechInsightsAI follows a modern client-server architecture with clear separation
 ### Core Components
 
 1. **Frontend (Client)**
-
    - React.js application
    - PWA features with service worker
    - IndexedDB for offline data storage
@@ -66,14 +65,12 @@ TechInsightsAI follows a modern client-server architecture with clear separation
    - Tailwind CSS for styling
 
 2. **Backend (Server)**
-
    - Express.js REST API
    - Mongoose for data modeling
    - Blog generation services
    - API integrations
 
 3. **Database**
-
    - MongoDB for persistent storage
    - Blog posts and related content
 
@@ -110,7 +107,7 @@ src/
 
 Serves as the application's main component, handling routing and layout structure. It initializes the offline database and sets up the application structure with header, main content area, and footer.
 
-````jsx
+```jsx
 function App() {
   useEffect(() => {
     // Initialize the offline database when the app loads
@@ -139,7 +136,7 @@ function App() {
     </Router>
   );
 }
-````
+```
 
 #### BlogsPage.jsx
 
@@ -237,7 +234,7 @@ server/
 
 The main entry point for the backend application. It sets up middleware, connects to the database, and registers routes.
 
-````js
+```js
 // Simplified version
 require("dotenv").config();
 const express = require("express");
@@ -255,7 +252,7 @@ app.use(
     origin: ["https://techinsightsai.vercel.app"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json({ limit: "1mb" }));
@@ -283,7 +280,7 @@ if (process.env.VERCEL) {
   };
   startServer().catch(console.error);
 }
-````
+```
 
 #### blogRoutes.js
 
@@ -320,7 +317,7 @@ module.exports = router;
 
 Contains the business logic for handling blog operations.
 
-````js
+```js
 // Get latest blog
 exports.getLatestBlog = async (req, res) => {
   try {
@@ -335,7 +332,6 @@ exports.getLatestBlog = async (req, res) => {
     }
 
     res.json({ blog: latestBlog });
-
   } catch (error) {
     console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
@@ -344,7 +340,7 @@ exports.getLatestBlog = async (req, res) => {
 /*
 Note: Generation is handled separately to keep read operations fast.
 */
-````
+```
 
 #### Blog.js (Model)
 
@@ -399,7 +395,7 @@ const BlogSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Blog", BlogSchema);
@@ -450,7 +446,7 @@ Blog {
 
 The application uses Mongoose as an ODM (Object Data Modeling) library for MongoDB. Connection handling is optimized for serverless environments:
 
-````js
+```js
 // In db.js
 const mongoose = require("mongoose");
 
@@ -486,9 +482,8 @@ const connectToDB = async () => {
 
     // Clear on disconnect
     mongoose.connection.on("disconnected", () => {
-       cachedPromise = null;
+      cachedPromise = null;
     });
-
   } catch (error) {
     cachedPromise = null;
     throw error;
@@ -496,7 +491,7 @@ const connectToDB = async () => {
 
   return cachedPromise;
 };
-````
+```
 
 ## API Integration
 
@@ -509,7 +504,7 @@ export async function fetchBlogContent() {
   try {
     if (!API_KEY) {
       throw new Error(
-        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file."
+        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file.",
       );
     }
 
@@ -564,13 +559,18 @@ export async function fetchBlogContent() {
 
 The application's internal API follows RESTful principles:
 
-| Endpoint              | Method | Description                   | Parameters                              |
-| --------------------- | ------ | ----------------------------- | --------------------------------------- |
-| `/api/blogs/latest`   | GET    | Get the latest blog post      | `genre` (optional)                      |
-| `/api/blogs/all`      | GET    | Get all blogs with pagination | `page`, `limit`, `genre` (all optional) |
-| `/api/blogs/generate` | POST   | Generate a new blog post      | `genre` (optional)                      |
-| `/api/blogs/:id`      | GET    | Get a specific blog by ID     | `id` (required)                         |
-| `/api/blogs/diagnose` | GET    | System diagnostics            | None                                    |
+| Endpoint                   | Method | Description                                   | Parameters                              |
+| -------------------------- | ------ | --------------------------------------------- | --------------------------------------- |
+| `/api/blogs/latest`        | GET    | Get the latest blog post                      | `genre` (optional)                      |
+| `/api/blogs/all`           | GET    | Get all blogs with pagination                 | `page`, `limit`, `genre` (all optional) |
+| `/api/blogs/generate`      | POST   | Generate a new blog post                      | `genre` (optional)                      |
+| `/api/blogs/:id`           | GET    | Get a specific blog by ID                     | `id` (required)                         |
+| `/api/blogs/diagnose`      | GET    | System diagnostics                            | None                                    |
+| `/api/auth/register`       | POST   | Register a new user                           | `name`, `email`, `password`             |
+| `/api/auth/login`          | POST   | Authenticate and login                        | `email`, `password`                     |
+| `/api/auth/profile`        | GET    | Get user profile                              | Bearer Token                            |
+| `/api/jobs/extract-skills` | POST   | Parse resume to extract skills (Rate-Limited) | `resume` (File)                         |
+| `/api/jobs/search`         | GET    | Search for tech jobs via JSearch API          | `query`                                 |
 
 ---
 
@@ -580,7 +580,7 @@ The application's internal API follows RESTful principles:
 
 The application uses IndexedDB for client-side storage to enable offline functionality:
 
-````js
+```js
 export const initializeDB = () => {
   // Return immediately if db is already initialized (optimized for performance)
   if (db) {
@@ -606,20 +606,22 @@ export const initializeDB = () => {
 
       if (!database.objectStoreNames.contains(BLOGS_STORE)) {
         // Create store and indexes
-        const store = database.createObjectStore(BLOGS_STORE, { keyPath: "_id" });
+        const store = database.createObjectStore(BLOGS_STORE, {
+          keyPath: "_id",
+        });
         store.createIndex("genre", "genre", { unique: false });
         store.createIndex("createdAt", "createdAt", { unique: false });
       }
     };
   });
 };
-````
+```
 
 ### Service Worker Configuration
 
 The service worker is configured to handle different caching strategies for various types of requests:
 
-````js
+```js
 // vite.config.js (workbox configuration)
 workbox: {
   globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
@@ -671,7 +673,7 @@ workbox: {
     },
   ],
 }
-````
+```
 
 ### Offline-First UX
 
@@ -758,6 +760,36 @@ The application provides feedback to users about their online/offline status:
                      │ available     │     │ cache         │      │ offline use   │
                      │               │     │               │      │               │
                      └───────────────┘     └───────────────┘      └───────────────┘
+```
+
+### User Authentication Workflow
+
+```
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│               │     │               │     │               │     │               │
+│ User submits  │────>│ Validate      │────>│ Hash password │────>│ Store in DB & │
+│ credentials   │     │ Credentials   │     │ or Verify Hash│     │ Return JWT    │
+│               │     │               │     │               │     │               │
+└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
+                                                                        │
+                                                                        ▼
+                                                              ┌───────────────┐
+                                                              │               │
+                                                              │ Client saves  │
+                                                              │ Token & Logs  │
+                                                              │ In            │
+                                                              └───────────────┘
+```
+
+### Resume Parsing & Job Match Workflow
+
+```
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│               │     │               │     │               │     │               │
+│ User uploads  │────>│ Extract skills│────>│ Query JSearch │────>│ Display       │
+│ resume (PDF)  │     │ via NLP/Regex │     │ API w/ Skills │     │ matching jobs │
+│               │     │               │     │               │     │               │
+└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
 ```
 
 ---

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { FaTerminal, FaFingerprint, FaLock, FaShieldAlt } from 'react-icons/fa';
 
 const Register = () => {
     const [email, setEmail] = useState('');
@@ -35,76 +36,134 @@ const Register = () => {
     const displayError = validationError || authError;
 
     return (
-        <div className="flex items-center justify-center min-h-[70vh]">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen bg-[#0a0a0c] flex items-center justify-center mt-4 px-4 sm:px-6 py-16 sm:py-20 selection:bg-[#ec5b13] selection:text-white"
+        >
+            {/* Background glows */}
+            <div className="fixed top-20 left-20 w-72 h-72 bg-[#8b5cf6]/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="fixed bottom-20 right-20 w-56 h-56 bg-[#ec5b13]/5 rounded-full blur-[100px] pointer-events-none" />
+
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md p-8 bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md"
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="w-full max-w-md relative z-10"
             >
-                <h2 className="text-3xl font-bold text-center text-white mb-6">Create Account</h2>
+                {/* Card */}
+                <div className="p-6 sm:p-8 bg-[#121212] border border-white/10 rounded-2xl relative overflow-hidden">
+                    {/* Accent line */}
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#8b5cf6] via-[#ec5b13] to-[#06b6d4]" />
 
-                {displayError && (
-                    <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-6 text-sm">
-                        {displayError}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                        <input
-                            type="email"
-                            required
-                            className="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                    {/* Header */}
+                    <div className="text-center mb-6 sm:mb-8">
+                        <motion.div
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#8b5cf6]/10 rounded-lg text-[#8b5cf6] font-mono text-[10px] sm:text-xs uppercase tracking-wider font-bold mb-4"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <FaTerminal className="text-xs" /> Register_Protocol
+                        </motion.div>
+                        <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter">Create_Node</h2>
+                        <p className="text-xs sm:text-sm text-slate-500 font-mono mt-2">// Initialize new identity on the network</p>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                        <input
-                            type="password"
-                            required
-                            className="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                    {/* Error */}
+                    {displayError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-xs sm:text-sm font-mono"
+                        >
+                            <span className="mr-2">⚠</span> {displayError}
+                        </motion.div>
+                    )}
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">
+                                <FaFingerprint className="text-[#8b5cf6] text-xs" /> Identity_Key
+                            </label>
+                            <input
+                                type="email"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-sm focus:ring-2 focus:ring-[#8b5cf6] focus:border-[#8b5cf6] transition-all outline-none placeholder:text-slate-600"
+                                placeholder="user@network.io"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">
+                                <FaLock className="text-[#8b5cf6] text-xs" /> Access_Key
+                            </label>
+                            <input
+                                type="password"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-sm focus:ring-2 focus:ring-[#8b5cf6] focus:border-[#8b5cf6] transition-all outline-none placeholder:text-slate-600"
+                                placeholder="Min 6 characters"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-widest mb-2">
+                                <FaShieldAlt className="text-[#8b5cf6] text-xs" /> Confirm_Key
+                            </label>
+                            <input
+                                type="password"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-sm focus:ring-2 focus:ring-[#8b5cf6] focus:border-[#8b5cf6] transition-all outline-none placeholder:text-slate-600"
+                                placeholder="Repeat access key"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                        </div>
+
+                        <motion.button
+                            type="submit"
+                            disabled={loading}
+                            className={`w-full py-3 sm:py-3.5 mt-2 rounded-xl text-white font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 ${loading
+                                ? 'bg-[#8b5cf6]/50 cursor-not-allowed'
+                                : 'bg-[#8b5cf6] hover:bg-[#8b5cf6]/90 active:scale-[0.98]'
+                                }`}
+                            whileHover={!loading ? { scale: 1.01 } : {}}
+                            whileTap={!loading ? { scale: 0.98 } : {}}
+                        >
+                            {loading ? (
+                                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Initializing...</>
+                            ) : (
+                                'Execute Register'
+                            )}
+                        </motion.button>
+                    </form>
+
+                    {/* Footer */}
+                    <div className="mt-6 sm:mt-8 pt-4 sm:pt-5 border-t border-white/5 text-center">
+                        <p className="text-slate-500 text-xs sm:text-sm font-mono">
+                            Already registered?{' '}
+                            <Link to="/login" className="text-[#ec5b13] hover:text-[#ec5b13]/80 transition-colors font-bold">
+                                Access_Terminal →
+                            </Link>
+                        </p>
                     </div>
+                </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
-                        <input
-                            type="password"
-                            required
-                            className="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none"
-                            placeholder="••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full py-3 px-4 mt-6 rounded-lg text-white font-medium transition-all ${loading ? 'bg-blue-600/50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98]'
-                            }`}
-                    >
-                        {loading ? 'Creating Account...' : 'Sign Up'}
-                    </button>
-                </form>
-
-                <p className="mt-6 text-center text-gray-400 text-sm">
-                    Already have an account?{' '}
-                    <Link to="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
-                        Log in
-                    </Link>
-                </p>
+                {/* Bottom status */}
+                <div className="mt-4 flex justify-center gap-4 font-mono text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-widest">
+                    <span>Encryption: AES-256</span>
+                    <span className="text-slate-800">|</span>
+                    <span>Protocol: TLS_1.3</span>
+                </div>
             </motion.div>
-        </div>
+        </motion.div>
     );
 };
 

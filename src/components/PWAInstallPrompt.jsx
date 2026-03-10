@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaDownload, FaTimes } from 'react-icons/fa';
+import { FaDownload, FaTimes, FaTerminal } from 'react-icons/fa';
 
 const PWA_INSTALL_DISMISSED_KEY = 'pwa-install-dismissed';
 const PWA_INSTALL_DISMISSED_TIMESTAMP_KEY = 'pwa-install-dismissed-timestamp';
@@ -178,11 +178,11 @@ const PWAInstallPrompt = () => {
                             onClick={handleInstallClick}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-3 rounded-full shadow-lg border border-cyan-400/30"
+                            className="flex items-center gap-2 bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white px-5 py-3 rounded-xl shadow-[0_0_15px_rgba(236,91,19,0.3)] border border-[#ec5b13]/30"
                         >
-                            <FaDownload size={16} />
-                            <span className="font-medium text-sm">
-                                {debugMode && !installPrompt ? 'Install Not Available' : 'Install App'}
+                            <FaDownload size={14} />
+                            <span className="font-mono text-xs sm:text-sm uppercase tracking-wider font-bold">
+                                {debugMode && !installPrompt ? 'Install_N/A' : 'Install_App'}
                             </span>
                         </motion.button>
 
@@ -191,7 +191,7 @@ const PWAInstallPrompt = () => {
                                 onClick={handleDismiss}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-full shadow-lg border border-slate-600/30"
+                                className="bg-[#121212] hover:bg-white/10 text-slate-400 p-3 rounded-xl shadow-lg border border-white/10 transition-colors"
                                 aria-label="Dismiss install prompt"
                             >
                                 <FaTimes size={14} />
@@ -201,18 +201,21 @@ const PWAInstallPrompt = () => {
 
                     {/* Debug info - only in development */}
                     {debugMode && (
-                        <div className="bg-slate-900/90 text-white text-xs p-2 rounded-md mt-2 w-64 border border-slate-700">
-                            <div>Install Available: {installPrompt ? 'Yes' : 'No'}</div>
-                            <div>Already Installed: {isInstalled ? 'Yes' : 'No'}</div>
-                            <div>Dismissed: {isDismissed ? 'Yes' : 'No'}</div>
-                            <div>Visible: {isVisible ? 'Yes' : 'No'}</div>
-                            <div className="text-xs mt-1 opacity-70">
-                                Debug mode - click to {' '}
+                        <div className="bg-[#121212]/95 text-slate-400 font-mono text-[10px] sm:text-xs p-3 rounded-xl mt-2 w-64 border border-[#ec5b13]/20 shadow-xl backdrop-blur-md uppercase tracking-widest">
+                            <div className="flex items-center gap-2 mb-2 text-[#ec5b13] border-b border-white/10 pb-2">
+                                <FaTerminal size={10} /> Debug_Terminal
+                            </div>
+                            <div className="flex justify-between"><span>Prompt:</span> <span className={installPrompt ? 'text-green-400' : 'text-slate-500'}>{installPrompt ? 'True' : 'False'}</span></div>
+                            <div className="flex justify-between"><span>Installed:</span> <span className={isInstalled ? 'text-green-400' : 'text-slate-500'}>{isInstalled ? 'True' : 'False'}</span></div>
+                            <div className="flex justify-between"><span>Dismissed:</span> <span className={isDismissed ? 'text-green-400' : 'text-slate-500'}>{isDismissed ? 'True' : 'False'}</span></div>
+                            <div className="flex justify-between"><span>Visible:</span> <span className={isVisible ? 'text-green-400' : 'text-slate-500'}>{isVisible ? 'True' : 'False'}</span></div>
+
+                            <div className="mt-2 pt-2 border-t border-white/5 text-[9px]">
                                 <button
-                                    className="underline text-cyan-400"
+                                    className="text-[#8b5cf6] hover:text-[#8b5cf6]/80 flex items-center gap-1"
                                     onClick={() => setDebugMode(false)}
                                 >
-                                    disable
+                                    [Disable_Debug_Mode]
                                 </button>
                             </div>
                         </div>

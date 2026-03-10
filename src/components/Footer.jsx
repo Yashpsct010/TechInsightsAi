@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaTwitter, FaLinkedinIn, FaGithub, FaLightbulb } from 'react-icons/fa';
+import { FaTwitter, FaLinkedinIn, FaGithub, FaTerminal } from 'react-icons/fa';
 import ComingSoonPopup from './ComingSoonPopup';
 
 const Footer = () => {
@@ -12,33 +12,17 @@ const Footer = () => {
         setIsPopupOpen(true);
     };
 
-    const footerLinks = [
-        {
-            title: 'Company',
-            links: [
-                { name: 'About', path: '/about' },
-                { name: 'Blog', path: '/blog' },
-                { name: 'Blogs', path: '/blogs' },
-                { name: 'Portfolio', path: 'https://yash-parmar-portfolio.vercel.app/' },
-            ]
-        },
-        {
-            title: 'Resources',
-            links: [
-                { name: 'Documentation', path: '#' },
-                { name: 'Privacy Policy', path: '#' },
-                { name: 'Terms of Service', path: '#' },
-                { name: 'FAQ', path: '#' }
-            ]
-        },
-        {
-            title: 'Follow Us',
-            links: [
-                { name: 'Twitter', path: 'https://x.com/Yashp010', icon: <FaTwitter /> },
-                { name: 'LinkedIn', path: 'https://www.linkedin.com/in/y-sh/', icon: <FaLinkedinIn /> },
-                { name: 'GitHub', path: 'https://github.com/Yashpsct010', icon: <FaGithub /> }
-            ]
-        }
+    const interfaceLinks = [
+        { name: 'Neural_Feed', path: '/blog' },
+        { name: 'Data_Archive', path: '/blogs' },
+        { name: 'Job_Matrix', path: '/jobs' },
+        { name: 'About_Node', path: '/about' }
+    ];
+
+    const socialLinks = [
+        { icon: <FaTwitter />, path: 'https://x.com/Yashp010', label: 'Twitter' },
+        { icon: <FaLinkedinIn />, path: 'https://www.linkedin.com/in/y-sh/', label: 'LinkedIn' },
+        { icon: <FaGithub />, path: 'https://github.com/Yashpsct010', label: 'GitHub' }
     ];
 
     const container = {
@@ -58,128 +42,130 @@ const Footer = () => {
 
     return (
         <>
-            <footer className="bg-gradient-to-b from-slate-900 to-gray-900 text-white relative">
-                {/* Enhanced Decorative Elements with animations */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30" />
-                    <motion.div
-                        className="absolute -top-24 -right-24 w-32 sm:w-48 h-32 sm:h-48 bg-cyan-500 rounded-full filter blur-3xl opacity-10"
-                        animate={{
-                            y: [0, 15, 0],
-                            scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                            duration: 10,
-                            repeat: Infinity,
-                            repeatType: "reverse"
-                        }}
-                    />
-                    <motion.div
-                        className="absolute -bottom-20 -left-20 w-40 sm:w-60 h-40 sm:h-60 bg-fuchsia-600 rounded-full filter blur-3xl opacity-10"
-                        animate={{
-                            y: [0, -15, 0],
-                            scale: [1, 1.15, 1],
-                        }}
-                        transition={{
-                            duration: 12,
-                            repeat: Infinity,
-                            repeatType: "reverse"
-                        }}
-                    />
-                </div>
-
-                <div className="container mx-auto px-4 py-10 sm:py-12 relative z-10">
-                    {/* Top Section with improved responsiveness */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-8 sm:mb-10">
-                        <div>
-                            <Link to="/" className="flex items-center gap-2 mb-4 sm:mb-6">
+            <footer className="mt-auto border-t border-white/10 bg-black text-slate-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+                    {/* Main Footer Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 md:gap-12 mb-12 sm:mb-16">
+                        {/* Brand Column */}
+                        <div className="sm:col-span-2">
+                            <Link to="/" className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                                 <motion.div
                                     whileHover={{ rotate: 360 }}
                                     transition={{ duration: 0.7 }}
-                                    className="bg-slate-800 rounded-full p-1.5 sm:p-2 border border-cyan-500/30"
+                                    className="bg-[#ec5b13] p-1 rounded-lg"
                                 >
-                                    <FaLightbulb className="text-cyan-400 text-base sm:text-lg" />
+                                    <FaTerminal className="text-white text-sm sm:text-base" />
                                 </motion.div>
-                                <span className="font-bold text-lg sm:text-xl text-white">
-                                    Tech<span className="text-cyan-400">Insights</span>AI
-                                </span>
+                                <h2 className="text-lg sm:text-xl font-black tracking-tighter uppercase font-mono">
+                                    TechInsights<span className="text-[#ec5b13]">.AI</span>
+                                </h2>
                             </Link>
-                            <p className="text-gray-300 mb-5 sm:mb-6 text-sm sm:text-base">
-                                Discover the latest insights in technology, generated by AI and curated for tech enthusiasts and forward-thinkers.
+                            <p className="text-slate-500 max-w-sm mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed">
+                                Decentralized artificial intelligence insights for the year {new Date().getFullYear()} and beyond. Synthesized for precision, curated for human intelligence.
                             </p>
+                            <div className="flex gap-3 sm:gap-4">
+                                {socialLinks.map((social, idx) => (
+                                    <motion.a
+                                        key={idx}
+                                        href={social.path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors text-slate-400 hover:text-white"
+                                        aria-label={social.label}
+                                    >
+                                        {social.icon}
+                                    </motion.a>
+                                ))}
+                            </div>
                         </div>
+
+                        {/* Interface Nodes Column */}
                         <motion.div
                             variants={container}
                             initial="hidden"
                             whileInView="show"
                             viewport={{ once: true }}
-                            className="col-span-1 md:col-span-3"
                         >
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-                                {footerLinks.map((column, idx) => (
-                                    <div key={idx}>
-                                        <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 text-white">{column.title}</h3>
-                                        <ul className="space-y-2 sm:space-y-3">
-                                            {column.links.map((link, linkIdx) => (
-                                                <motion.li key={linkIdx} variants={item}>
-                                                    <Link
-                                                        to={link.path}
-                                                        className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 text-sm sm:text-base"
-                                                    >
-                                                        {link.icon && <span>{link.icon}</span>}
-                                                        {link.name}
-                                                    </Link>
-                                                </motion.li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                            <h4 className="font-mono text-xs uppercase tracking-[0.2em] text-white mb-4 sm:mb-6">
+                                Interface_Nodes
+                            </h4>
+                            <ul className="flex flex-col gap-3 sm:gap-4">
+                                {interfaceLinks.map((link, idx) => (
+                                    <motion.li key={idx} variants={item}>
+                                        <Link
+                                            to={link.path}
+                                            className="font-mono text-xs sm:text-sm text-slate-500 uppercase tracking-widest hover:text-[#ec5b13] transition-colors"
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    </motion.li>
                                 ))}
-                            </div>
+                            </ul>
                         </motion.div>
-                    </div>
 
-                    {/* Newsletter with improved responsiveness */}
-                    <motion.div
-                        className="bg-slate-800/50 backdrop-blur-sm rounded-lg sm:rounded-2xl p-4 sm:p-8 mb-8 sm:mb-10 border border-slate-700"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <div className="grid md:grid-cols-5 gap-4 sm:gap-6 items-center">
-                            <div className="md:col-span-3">
-                                <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">Stay up to date</h3>
-                                <p className="text-gray-300 text-sm sm:text-base">Get the latest tech insights delivered straight to your inbox.</p>
+                        {/* Terminal Status Column */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <h4 className="font-mono text-xs uppercase tracking-[0.2em] text-white mb-4 sm:mb-6">
+                                Terminal_Status
+                            </h4>
+                            <div className="p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-[10px] sm:text-xs text-slate-400 space-y-2">
+                                <div className="flex justify-between">
+                                    <span>Uptime:</span>
+                                    <span className="text-green-500">Online</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Version:</span>
+                                    <span>v2026.4.1</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Auth:</span>
+                                    <span className="text-[#ec5b13]">Encrypted</span>
+                                </div>
                             </div>
-                            <div className="md:col-span-2">
-                                <form className="flex" onSubmit={handleSubscribeClick}>
+
+                            {/* Newsletter */}
+                            <form className="mt-4 sm:mt-6" onSubmit={handleSubscribeClick}>
+                                <label className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 block">
+                                    Neural_Feed_Subscribe
+                                </label>
+                                <div className="flex">
                                     <input
                                         type="email"
-                                        placeholder="Enter your email"
-                                        className="bg-slate-700/70 text-white rounded-l-lg px-3 sm:px-4 py-2 sm:py-3 flex-grow focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base border-y border-l border-slate-600"
+                                        placeholder="email@node..."
+                                        className="bg-white/5 text-white rounded-l-lg px-3 py-2 grow focus:outline-none focus:ring-1 focus:ring-[#ec5b13]/50 text-xs sm:text-sm font-mono border border-white/10 border-r-0 placeholder:text-slate-600 min-w-0"
                                     />
                                     <motion.button
                                         type="submit"
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-r-lg transition-colors text-sm sm:text-base border border-fuchsia-400/30"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-mono font-bold text-xs uppercase px-3 sm:px-4 py-2 rounded-r-lg transition-colors shrink-0"
                                     >
-                                        Subscribe
+                                        Sync
                                     </motion.button>
-                                </form>
-                            </div>
-                        </div>
-                    </motion.div>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
 
-                    {/* Bottom Section with improved responsiveness */}
-                    <div className="pt-6 sm:pt-8 border-t border-slate-700/50 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                        <p className="text-gray-400 text-xs sm:text-sm">
-                            &copy; {new Date().getFullYear()} TechInsights AI. All rights reserved.
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Privacy Policy</Link>
-                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Terms of Service</Link>
-                            <Link to="#" className="text-gray-400 hover:text-cyan-400 text-xs sm:text-sm transition-colors">Cookie Policy</Link>
+                    {/* Bottom Bar */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center pt-6 sm:pt-8 border-t border-white/5 gap-4 sm:gap-0">
+                        <span className="font-mono text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] text-center sm:text-left">
+                            © {new Date().getFullYear()} TECHINSIGHTS_AI // ALL_DATA_SYNTHESIZED
+                        </span>
+                        <div className="flex gap-4 sm:gap-8">
+                            <Link to="#" className="font-mono text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] hover:text-white transition-colors">
+                                Privacy_Protocol
+                            </Link>
+                            <Link to="#" className="font-mono text-[9px] sm:text-[10px] text-slate-600 uppercase tracking-[0.2em] sm:tracking-[0.3em] hover:text-white transition-colors">
+                                Neural_TOS
+                            </Link>
                         </div>
                     </div>
                 </div>

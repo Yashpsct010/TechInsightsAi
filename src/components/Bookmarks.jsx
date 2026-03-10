@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import { formatDate } from './utils/formatters';
+import { FaBookmark, FaArrowRight, FaCalendarAlt } from 'react-icons/fa';
 
 const Bookmarks = () => {
     const { user, toggleBookmark } = useAuth();
@@ -11,6 +12,7 @@ const Bookmarks = () => {
     const [bookmarks, setBookmarks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [failedImages, setFailedImages] = useState(new Set());
 
     useEffect(() => {
         if (!user) {
@@ -38,11 +40,14 @@ const Bookmarks = () => {
         e.stopPropagation();
         try {
             await toggleBookmark(blogId);
-            // Optimistically remove from list
             setBookmarks(prev => prev.filter(b => b._id !== blogId));
         } catch (err) {
             console.error("Failed to toggle bookmark", err);
         }
+    };
+
+    const handleImageError = (blogId) => {
+        setFailedImages(prev => new Set(prev).add(blogId));
     };
 
     const container = {
@@ -68,117 +73,172 @@ const Bookmarks = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="container mx-auto px-4 py-8 max-w-6xl pt-20 md:pt-28 min-h-screen"
+            className="min-h-screen bg-[#0a0a0c] text-slate-100 pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 pb-12 selection:bg-[#ec5b13] selection:text-white"
         >
-            <div className="mb-8 overflow-hidden">
-                <div className="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                    </svg>
-                    <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-yellow-400 to-yellow-600 text-transparent bg-clip-text">
-                        Your Bookmarks
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mb-8 sm:mb-10"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-[2px] bg-[#ec5b13]" />
+                        <span className="font-mono text-[10px] sm:text-xs text-[#ec5b13] uppercase tracking-widest">// Saved_Data_Nodes</span>
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter">
+                        Your <span className="text-[#ec5b13]">Bookmarks</span>
                     </h1>
-                </div>
+                    <p className="text-xs sm:text-sm text-slate-500 font-mono mt-2">{bookmarks.length} node{bookmarks.length !== 1 ? 's' : ''} cached</p>
+                </motion.div>
 
+                {/* Content */}
                 <AnimatePresence mode="wait">
+                    {/* Loading */}
                     {loading ? (
                         <motion.div
                             key="loading"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="flex justify-center py-20"
+                            className="flex flex-col items-center justify-center py-16 sm:py-24"
                         >
-                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500"></div>
+                            <motion.div className="relative">
+                                <motion.div
+                                    className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#ec5b13] border-t-transparent rounded-full"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                />
+                                <motion.div
+                                    className="absolute inset-0 rounded-full border-2 sm:border-4 border-[#8b5cf6]"
+                                    animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }}
+                                    transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 0.2 }}
+                                />
+                            </motion.div>
+                            <p className="mt-4 text-slate-500 text-sm font-mono uppercase tracking-wider">Loading_Cached_Data...</p>
                         </motion.div>
+
                     ) : error ? (
+                        /* Error */
                         <motion.div
                             key="error"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="bg-slate-800 border border-red-500/30 text-gray-100 p-6 rounded-lg"
+                            className="glass-panel p-6 sm:p-8 rounded-2xl border-l-4 border-red-500"
                         >
-                            <h3 className="font-bold text-lg mb-2 text-red-400">Error</h3>
-                            <p>{error}</p>
-                            <button
+                            <h3 className="font-bold text-sm mb-2 text-red-400 font-mono uppercase tracking-tight">
+                                <span className="mr-2">⚠</span> Retrieval_Error
+                            </h3>
+                            <p className="text-slate-400 text-sm mb-4">{error}</p>
+                            <motion.button
                                 onClick={fetchBookmarks}
-                                className="mt-4 px-4 py-2 bg-fuchsia-600 text-white rounded-md hover:bg-fuchsia-500 border border-fuchsia-400/30"
+                                className="px-5 py-2 bg-[#ec5b13] text-white rounded-xl hover:bg-[#ec5b13]/90 transition-colors text-xs sm:text-sm font-mono uppercase tracking-wider font-bold"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                             >
-                                Try Again
-                            </button>
+                                Retry_Connection
+                            </motion.button>
                         </motion.div>
+
                     ) : bookmarks.length === 0 ? (
+                        /* Empty */
                         <motion.div
                             key="no-results"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="bg-slate-800 border border-slate-700 rounded-lg p-10 text-center"
+                            className="text-center py-16 sm:py-24"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                            </svg>
-                            <h3 className="text-xl font-medium mb-2 text-white">No bookmarks yet</h3>
-                            <p className="text-gray-400 max-w-md mx-auto mb-6">You haven't saved any articles to your bookmarks. Find something interesting and click the bookmark icon to save it here.</p>
-                            <Link to="/blogs" className="inline-block px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 transition-colors border border-cyan-400/30">
-                                Explore Blogs
+                            <FaBookmark className="text-4xl sm:text-5xl text-slate-700 mx-auto mb-4" />
+                            <h3 className="text-xl sm:text-2xl font-black mb-3 text-white uppercase tracking-tighter">No_Data_Cached</h3>
+                            <p className="text-slate-500 font-mono text-xs sm:text-sm max-w-md mx-auto mb-6">
+                                You haven't saved any articles yet. Explore the archive and cache nodes for quick access.
+                            </p>
+                            <Link
+                                to="/blogs"
+                                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-[#ec5b13] text-white rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider font-bold hover:bg-[#ec5b13]/90 transition-colors"
+                            >
+                                Explore_Archive <FaArrowRight className="text-xs" />
                             </Link>
                         </motion.div>
+
                     ) : (
+                        /* Bookmarks Grid */
                         <motion.div
                             key="results"
                             variants={container}
                             initial="hidden"
                             animate="show"
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
                         >
-                            {bookmarks.map((blog) => (
-                                <motion.div
-                                    key={blog._id}
-                                    variants={item}
-                                    className="bg-slate-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow border border-slate-700 relative"
-                                >
-                                    <button
-                                        onClick={(e) => handleBookmark(e, blog._id)}
-                                        className="absolute top-2 right-2 p-2 rounded-full z-10 backdrop-blur-sm transition-colors text-yellow-400 bg-black/40 hover:bg-black/60"
-                                        title="Remove Bookmark"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                                        </svg>
-                                    </button>
+                            {bookmarks.map((blog) => {
+                                const hasValidImage = blog.image && !failedImages.has(blog._id);
 
-                                    <Link to={`/blog/${blog._id}`} className="block h-full">
-                                        <div className="h-48 overflow-hidden">
-                                            <img
-                                                src={blog.image}
-                                                alt={blog.imageAlt || blog.title}
-                                                className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                            />
-                                        </div>
-                                        <div className="p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 bg-cyan-900/50 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
-                                                    {blog.genre?.charAt(0).toUpperCase() + blog.genre?.slice(1).replace('-', ' ') || 'Blog'}
-                                                </span>
-                                                <span className="text-gray-400 text-xs">
-                                                    {formatDate(blog.createdAt)}
-                                                </span>
+                                return (
+                                    <motion.div
+                                        key={blog._id}
+                                        variants={item}
+                                        className="glass-panel rounded-2xl overflow-hidden group hover:border-[#ec5b13]/30 transition-all duration-500 relative"
+                                    >
+                                        {/* Remove Bookmark */}
+                                        <button
+                                            onClick={(e) => handleBookmark(e, blog._id)}
+                                            className="absolute top-3 right-3 z-10 p-2 rounded-lg backdrop-blur-sm text-[#ec5b13] bg-[#ec5b13]/10 border border-[#ec5b13]/20 hover:bg-[#ec5b13]/20 transition-all"
+                                            title="Remove Bookmark"
+                                        >
+                                            <FaBookmark className="text-sm" />
+                                        </button>
+
+                                        <Link to={`/blog/${blog._id}`} className="block h-full">
+                                            {/* Image */}
+                                            <div className="h-40 sm:h-44 md:h-48 overflow-hidden bg-[#121212]">
+                                                {hasValidImage ? (
+                                                    <img
+                                                        src={blog.image}
+                                                        alt={blog.imageAlt || blog.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        onError={() => handleImageError(blog._id)}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-[#ec5b13]/10 to-[#8b5cf6]/10 flex items-center justify-center">
+                                                        <span className="font-mono text-xs text-slate-600 uppercase tracking-widest">No_Image</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-white">
-                                                {blog.title}
-                                            </h2>
-                                            <div className="mt-4 flex justify-between items-center text-cyan-400 text-sm font-medium">
-                                                <span>Read more</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                </svg>
+
+                                            {/* Content */}
+                                            <div className="p-4 sm:p-5">
+                                                {/* Genre + Date */}
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <span className="px-2 py-0.5 bg-[#06b6d4]/10 text-[#06b6d4] text-[10px] font-mono uppercase rounded border border-[#06b6d4]/20">
+                                                        {blog.genre?.charAt(0).toUpperCase() + blog.genre?.slice(1).replace('-', ' ') || 'Blog'}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-600 font-mono flex items-center gap-1">
+                                                        <FaCalendarAlt className="text-[8px]" /> {formatDate(blog.createdAt)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Title */}
+                                                <h2 className="text-sm sm:text-base font-bold mb-3 line-clamp-2 text-white uppercase tracking-tight leading-snug group-hover:text-[#ec5b13] transition-colors">
+                                                    {blog.title}
+                                                </h2>
+
+                                                {/* Bottom */}
+                                                <div className="flex items-center justify-between pt-3 border-t border-white/5 font-mono text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-widest">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#ec5b13]" />
+                                                        Cached
+                                                    </span>
+                                                    <span className="text-[#ec5b13] flex items-center gap-1 font-bold">
+                                                        Access_Data <FaArrowRight className="text-[8px]" />
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
+                                        </Link>
+                                    </motion.div>
+                                );
+                            })}
                         </motion.div>
                     )}
                 </AnimatePresence>

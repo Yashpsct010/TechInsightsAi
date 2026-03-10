@@ -1,5 +1,126 @@
 @import "tailwindcss";
 
+html,
+body {
+  background-color: #0a0a0c;
+}
+
+/* Home page - Glass shard card style */
+.glass-shard {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Sidebar glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glitch text effect */
+.glitch-text {
+  animation: glitch-flicker 4s infinite;
+}
+
+@keyframes glitch-flicker {
+  0%,
+  2% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  2.5% {
+    text-shadow:
+      -3px 0 #06b6d4,
+      3px 0 #ec5b13;
+    transform: skewX(-2deg);
+  }
+  3% {
+    text-shadow:
+      2px 0 #ec5b13,
+      -2px 0 #8b5cf6;
+    transform: skewX(1deg);
+  }
+  3.5% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  7%,
+  7.5% {
+    text-shadow:
+      -2px 1px #06b6d4,
+      2px -1px #ec5b13;
+    transform: translate(-1px, 1px);
+  }
+  8% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  30%,
+  30.5% {
+    text-shadow:
+      3px 0 #ec5b13,
+      -3px 0 #06b6d4;
+    transform: skewX(3deg);
+  }
+  31% {
+    text-shadow:
+      -2px 0 #8b5cf6,
+      2px 0 #ec5b13;
+    transform: skewX(-1deg);
+  }
+  31.5% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  50%,
+  50.3% {
+    text-shadow:
+      2px 0 #06b6d4,
+      -1px 0 #ec5b13;
+    transform: translate(1px, 0);
+  }
+  50.6% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  72%,
+  72.5% {
+    text-shadow:
+      -3px 0 #ec5b13,
+      3px 0 #8b5cf6;
+    transform: skewX(-2deg);
+  }
+  73% {
+    text-shadow:
+      1px 1px #06b6d4,
+      -1px -1px #ec5b13;
+    transform: skewX(1deg);
+  }
+  73.5% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  100% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+}
+.article-content p {
+  margin-bottom: 1.5rem;
+  line-height: 1.8;
+}
+
+.article-content p:first-of-type::first-letter {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #ec5b13;
+  float: left;
+  margin-right: 0.75rem;
+  line-height: 1;
+}
+
 .blog-content h2,
 .blog-content h3 {
   @apply text-2xl font-bold mb-4 mt-8 text-white;

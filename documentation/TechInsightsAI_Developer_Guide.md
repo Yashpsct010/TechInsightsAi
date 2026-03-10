@@ -138,7 +138,7 @@ Here's a breakdown of the key components:
 
 This is our main component that sets up the routing structure. Take a look:
 
-````jsx
+```jsx
 function App() {
   useEffect(() => {
     // Initialize the offline database when the app loads
@@ -167,7 +167,7 @@ function App() {
     </Router>
   );
 }
-````
+```
 
 > 📝 **Note**: The `<AnimatePresence>` component from Framer Motion enables page transition animations. The `mode="wait"` prop makes sure the exiting component finishes its animation before the entering component starts.
 
@@ -207,7 +207,7 @@ One of our biggest challenges was making the app work offline. Here's how we han
 1. **Service Worker**: Registers in `main.jsx` and caches static assets and API responses
 2. **IndexedDB**: Stores blog data for offline access
 
-````js
+```js
 // In offlineDataService.js
 export const saveBlog = async (blog) => {
   try {
@@ -236,7 +236,7 @@ export const saveBlog = async (blog) => {
     return false;
   }
 };
-````
+```
 
 > ⚠️ **Gotcha**: IndexedDB operations are asynchronous but don't return promises natively. We wrap them in promises for easier use with async/await.
 
@@ -260,11 +260,18 @@ The backend follows a standard Express.js architecture but with some tweaks for 
 ```
 server/
 ├── controllers/         # Request handlers
-│   └── blogController.js # Blog-related operations
+│   ├── blogController.js # Blog-related operations
+│   ├── authController.js # Handle user login and registration logic
+│   └── jobController.js  # Handle job search and resume parsing
 ├── models/              # Data models
-│   └── Blog.js          # Blog schema definition
+│   ├── Blog.js          # Blog schema definition
+│   └── User.js          # User schema and pass-hash definition
 ├── routes/              # API routes
-│   └── blogRoutes.js    # Blog endpoint definitions
+│   ├── blogRoutes.js    # Blog endpoint definitions
+│   ├── authRoutes.js    # Authentication endpoint definitions
+│   └── jobRoutes.js     # Job board endpoint definitions
+├── middleware/          # Express middlewares
+│   └── authMiddleware.js # Route protection and JWT validation
 ├── utils/               # Utility functions
 │   └── db.js            # Database connection handling
 ├── cron/                # Scheduled tasks
@@ -276,7 +283,7 @@ server/
 
 In a serverless environment, connection handling is crucial. Here's our approach:
 
-````js
+```js
 // In db.js
 const mongoose = require("mongoose");
 
@@ -322,7 +329,7 @@ const connectToDB = async () => {
 
   return cachedPromise;
 };
-````
+```
 
 > 💡 **Pro Tip**: This pattern prevents multiple serverless functions from creating their own connections simultaneously, which can lead to connection limits being exceeded.
 
@@ -384,7 +391,7 @@ The core of our application is the blog generation logic. Here's the simplified 
 3. Process and store the result
 4. Return to the client
 
-````js
+```js
 // In blogController.js
 exports.getLatestBlog = async (req, res) => {
   try {
@@ -399,7 +406,6 @@ exports.getLatestBlog = async (req, res) => {
     }
 
     res.json({ blog: latestBlog });
-
   } catch (error) {
     console.error("Error getting latest blog:", error);
     res.status(500).json({ error: error.message });
@@ -409,7 +415,7 @@ exports.getLatestBlog = async (req, res) => {
 Note: The actual generation logic is handled in a separate generateBlog function
 or via cron jobs/admin requests, keeping the read path fast.
 */
-````
+```
 
 > 💡 **Pro Tip**: For expensive operations like AI content generation, always implement caching! It saves costs and improves performance dramatically.
 
@@ -470,7 +476,7 @@ const BlogSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 ```
 
@@ -533,7 +539,7 @@ export async function fetchBlogContent() {
   try {
     if (!API_KEY) {
       throw new Error(
-        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file."
+        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file.",
       );
     }
 
@@ -592,7 +598,7 @@ async function callWithRetry(apiCall, maxRetries = 3) {
       if (attempt < maxRetries) {
         // Exponential backoff: 1s, 2s, 4s, etc.
         await new Promise((r) =>
-          setTimeout(r, 1000 * Math.pow(2, attempt - 1))
+          setTimeout(r, 1000 * Math.pow(2, attempt - 1)),
         );
       }
     }
@@ -656,7 +662,7 @@ Making an app work offline is tricky but worthwhile. Here's how we approach it:
 
 We use different caching strategies for different types of requests:
 
-````js
+```js
 // In vite.config.js
 workbox: {
   globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
@@ -712,7 +718,7 @@ workbox: {
     // ... other strategies ...
   ],
 }
-````
+```
 
 > 📝 **Caching Strategies Explained**:
 >
@@ -724,7 +730,7 @@ workbox: {
 
 Alongside the service worker, we use IndexedDB to store blog data:
 
-````js
+```js
 // In offlineDataService.js
 export const getLatestBlog = async () => {
   const latestBlogId = localStorage.getItem(LATEST_BLOG_KEY);
@@ -757,7 +763,7 @@ export const getLatestBlog = async () => {
     return null;
   }
 };
-````
+```
 
 > ⚠️ **Gotcha**: IndexedDB operations can fail if the user is in private browsing mode in some browsers (especially Safari). Always have a fallback plan!
 
@@ -836,7 +842,6 @@ Here's how to get your development environment set up:
 Service workers can be tricky to test. Here's how to do it effectively:
 
 1. **Use Chrome's DevTools**
-
    - Open DevTools > Application > Service Workers
    - You can view, debug, and unregister service workers here
 
@@ -851,12 +856,10 @@ Service workers can be tricky to test. Here's how to do it effectively:
 Here are some issues you might encounter and how to solve them:
 
 1. **Service worker not updating**
-
    - Try unregistering the service worker in DevTools
    - Ensure your workbox configuration has the right settings
 
 2. **CORS errors when calling the backend**
-
    - Check that your backend CORS settings match the frontend origin
    - During development, ensure the backend allows localhost
 
@@ -873,13 +876,11 @@ Here are some common issues you might encounter and how to debug them:
 ### Frontend Issues
 
 1. **White screen / App not loading**
-
    - Check the browser console for JavaScript errors
    - Verify that all required environment variables are set
    - Check network tab for failed requests
 
 2. **Service worker issues**
-
    - Inspect Application tab > Service Workers in DevTools
    - Try unregistering and reloading
    - Check workbox logs in console (they start with `workbox -`)
@@ -891,13 +892,11 @@ Here are some common issues you might encounter and how to debug them:
 ### Backend Issues
 
 1. **API returning 500 errors**
-
    - Check server logs for detailed error messages
    - Verify database connection is working
    - Check if Gemini API is responsive
 
 2. **MongoDB connection failures**
-
    - Verify connection string is correct
    - Check network connectivity to MongoDB Atlas
    - Verify IP whitelist settings in MongoDB Atlas
@@ -910,7 +909,6 @@ Here are some common issues you might encounter and how to debug them:
 ### Performance Issues
 
 1. **Slow page load times**
-
    - Use Lighthouse in Chrome DevTools to identify bottlenecks
    - Check bundle size with `npm run build -- --report`
    - Consider code splitting for large components

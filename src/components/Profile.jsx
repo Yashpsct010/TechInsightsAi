@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaTerminal, FaUser, FaSlidersH, FaBookmark, FaFingerprint, FaShieldAlt } from 'react-icons/fa';
 
 const GENRES = [
-    { id: 'ai-ml', name: 'AI & Machine Learning', icon: '🤖' },
-    { id: 'cybersecurity', name: 'Cybersecurity', icon: '🔒' },
-    { id: 'coding', name: 'Coding & Dev', icon: '💻' },
-    { id: 'emerging-tech', name: 'Emerging Tech', icon: '🚀' },
-    { id: 'tech-news', name: 'Tech News', icon: '📰' }
+    { id: 'ai-ml', name: 'AI & Machine Learning', icon: '🤖', code: 'AI_ML' },
+    { id: 'cybersecurity', name: 'Cybersecurity', icon: '🔒', code: 'SEC' },
+    { id: 'coding', name: 'Coding & Dev', icon: '💻', code: 'DEV' },
+    { id: 'emerging-tech', name: 'Emerging Tech', icon: '🚀', code: 'EMR' },
+    { id: 'tech-news', name: 'Tech News', icon: '📰', code: 'NEWS' }
 ];
 
 const Profile = () => {
@@ -32,55 +33,85 @@ const Profile = () => {
         const success = await updatePreferences(selectedPreferences);
 
         if (success) {
-            setSaveMessage({ text: 'Preferences saved successfully!', type: 'success' });
+            setSaveMessage({ text: 'Preferences synced successfully!', type: 'success' });
             setTimeout(() => setSaveMessage({ text: '', type: '' }), 3000);
         } else {
-            setSaveMessage({ text: 'Failed to save preferences. Please try again.', type: 'error' });
+            setSaveMessage({ text: 'Sync failed. Please retry.', type: 'error' });
         }
         setIsSaving(false);
     };
 
-    return (
-        <div className="container mx-auto px-4 py-8 mt-20 sm:mt-24 min-h-[70vh]">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-4xl mx-auto"
-            >
-                <h1 className="text-3xl font-bold text-white mb-8 border-b border-slate-700 pb-4">
-                    Account Settings
-                </h1>
+    const tabs = [
+        { id: 'profile', label: 'Node_Profile', icon: FaUser },
+        { id: 'preferences', label: 'Config_Prefs', icon: FaSlidersH },
+    ];
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* Sidebar / Nav */}
-                    <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 h-fit md:col-span-1">
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen bg-[#0a0a0c] text-slate-100 pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 pb-12 selection:bg-[#ec5b13] selection:text-white"
+        >
+            <div className="max-w-5xl mx-auto">
+                {/* Header */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mb-8 sm:mb-10"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-[2px] bg-[#ec5b13]" />
+                        <span className="font-mono text-[10px] sm:text-xs text-[#ec5b13] uppercase tracking-widest">// System_Settings</span>
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter">
+                        Account <span className="text-[#ec5b13]">Terminal</span>
+                    </h1>
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
+                    {/* Sidebar Nav */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="glass-panel rounded-2xl p-4 h-fit md:col-span-1"
+                    >
                         <nav className="flex flex-col space-y-2">
-                            <button
-                                onClick={() => setActiveTab('profile')}
-                                className={`text-left px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'profile'
-                                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                                        : 'text-gray-400 hover:text-white hover:bg-slate-700'
-                                    }`}
-                            >
-                                General Profile
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('preferences')}
-                                className={`text-left px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'preferences'
-                                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                                        : 'text-gray-400 hover:text-white hover:bg-slate-700'
-                                    }`}
-                            >
-                                Preferences
-                            </button>
-                            <button className="text-left px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-slate-700 transition-colors opacity-50 cursor-not-allowed cursor-">
-                                Saved Bookmarks
+                            {tabs.map((tab) => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`text-left px-4 py-2.5 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === tab.id
+                                            ? 'bg-[#ec5b13]/10 text-[#ec5b13] border border-[#ec5b13]/20 font-bold'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                            }`}
+                                    >
+                                        <Icon className="text-xs shrink-0" />
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                            {/* Disabled bookmark link */}
+                            <button className="text-left px-4 py-2.5 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider text-slate-600 flex items-center gap-2 cursor-not-allowed">
+                                <FaBookmark className="text-xs shrink-0" />
+                                Saved_Data
                             </button>
                         </nav>
-                    </div>
 
-                    {/* Main Content Area */}
+                        {/* User badge */}
+                        <div className="mt-6 pt-4 border-t border-white/5">
+                            <div className="flex items-center gap-2 font-mono text-[10px] text-slate-600 uppercase tracking-widest">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                Node: Online
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Main Content */}
                     <div className="md:col-span-3">
                         <AnimatePresence mode="wait">
                             {activeTab === 'profile' && (
@@ -90,35 +121,41 @@ const Profile = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.2 }}
-                                    className="space-y-6"
+                                    className="space-y-5 sm:space-y-6"
                                 >
-                                    <div className="bg-slate-800/80 backdrop-blur border border-slate-700 rounded-xl p-6 shadow-xl">
-                                        <h2 className="text-xl font-semibold text-white mb-4">Profile Information</h2>
+                                    {/* Profile Info Card */}
+                                    <div className="p-5 sm:p-6 bg-[#121212] border border-white/10 rounded-2xl">
+                                        <h2 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-5 uppercase tracking-tight flex items-center gap-2">
+                                            <FaFingerprint className="text-[#8b5cf6]" /> Identity_Data
+                                        </h2>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
-                                                <div className="bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2.5 text-gray-200">
+                                                <label className="block text-[10px] sm:text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5">Email_Address</label>
+                                                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 font-mono">
                                                     {user?.email}
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-400 mb-1">Account Role</label>
-                                                <div className="inline-flex items-center px-3 py-1 rounded-md bg-slate-700 text-gray-200 text-sm">
+                                                <label className="block text-[10px] sm:text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5">Auth_Level</label>
+                                                <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 font-mono text-xs sm:text-sm">
                                                     {user?.role === 'admin' ? (
-                                                        <span className="text-fuchsia-400 font-medium">Administrator</span>
+                                                        <span className="text-[#ec5b13] font-bold uppercase tracking-wider">Administrator</span>
                                                     ) : (
-                                                        'Standard User'
+                                                        <span className="text-slate-300 uppercase tracking-wider">Standard_User</span>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-800/80 backdrop-blur border border-slate-700 rounded-xl p-6 shadow-xl relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                                        <h2 className="text-xl font-semibold text-cyan-400 mb-2">Welcome to TechInsightsAI!</h2>
-                                        <p className="text-gray-400 text-sm leading-relaxed relative z-10">
-                                            Explore the new Preferences tab to customize your feed. By selecting your favorite topics, you ensure you see the most relevant tech news first.
+                                    {/* Welcome Card */}
+                                    <div className="p-5 sm:p-6 bg-[#121212] border border-white/10 rounded-2xl relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#8b5cf6]/5 rounded-full blur-[80px] pointer-events-none" />
+                                        <h2 className="text-base sm:text-lg font-bold text-[#ec5b13] mb-2 uppercase tracking-tight flex items-center gap-2">
+                                            <FaTerminal /> System_Welcome
+                                        </h2>
+                                        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed relative z-10">
+                                            Navigate to the <span className="text-[#8b5cf6] font-bold">Config_Prefs</span> tab to customize your data feed. Select your preferred protocols to filter the most relevant tech intel.
                                         </p>
                                     </div>
                                 </motion.div>
@@ -131,13 +168,15 @@ const Profile = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.2 }}
-                                    className="space-y-6"
+                                    className="space-y-5 sm:space-y-6"
                                 >
-                                    <div className="bg-slate-800/80 backdrop-blur border border-slate-700 rounded-xl p-6 shadow-xl">
-                                        <h2 className="text-xl font-semibold text-white mb-2">Your Tech Interests</h2>
-                                        <p className="text-sm text-gray-400 mb-6">Select the genres you are most interested in. We'll prioritize these in your feed.</p>
+                                    <div className="p-5 sm:p-6 bg-[#121212] border border-white/10 rounded-2xl">
+                                        <h2 className="text-base sm:text-lg font-bold text-white mb-1 uppercase tracking-tight flex items-center gap-2">
+                                            <FaSlidersH className="text-[#8b5cf6]" /> Data_Protocols
+                                        </h2>
+                                        <p className="text-xs sm:text-sm text-slate-500 font-mono mb-6">// Select preferred intel channels for your feed</p>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 sm:mb-8">
                                             {GENRES.map((genre) => {
                                                 const isSelected = selectedPreferences.includes(genre.id);
                                                 return (
@@ -146,40 +185,52 @@ const Profile = () => {
                                                         whileTap={{ scale: 0.98 }}
                                                         key={genre.id}
                                                         onClick={() => handleTogglePreference(genre.id)}
-                                                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${isSelected
-                                                                ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                                                                : 'bg-slate-900/50 border-slate-700 text-gray-400 hover:bg-slate-700 hover:text-gray-200'
+                                                        className={`flex items-center gap-3 p-3 sm:p-4 rounded-xl border text-left transition-all ${isSelected
+                                                            ? 'bg-[#ec5b13]/10 border-[#ec5b13]/30 text-white'
+                                                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
                                                             }`}
                                                     >
                                                         <span className="text-xl">{genre.icon}</span>
-                                                        <span className="font-medium">{genre.name}</span>
+                                                        <div>
+                                                            <span className="font-bold text-sm block">{genre.name}</span>
+                                                            <span className="font-mono text-[10px] text-slate-600 uppercase">{genre.code}_PROTOCOL</span>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <span className="ml-auto w-2 h-2 rounded-full bg-[#ec5b13]" />
+                                                        )}
                                                     </motion.button>
                                                 );
                                             })}
                                         </div>
 
-                                        <div className="flex items-center justify-between border-t border-slate-700 pt-6">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-white/5 pt-5 sm:pt-6 gap-3">
                                             <div>
                                                 {saveMessage.text && (
                                                     <motion.span
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
-                                                        className={`text-sm ${saveMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}
+                                                        className={`text-xs sm:text-sm font-mono ${saveMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}
                                                     >
-                                                        {saveMessage.text}
+                                                        {saveMessage.type === 'success' ? '✓' : '⚠'} {saveMessage.text}
                                                     </motion.span>
                                                 )}
                                             </div>
-                                            <button
+                                            <motion.button
                                                 onClick={handleSavePreferences}
                                                 disabled={isSaving}
-                                                className={`px-6 py-2 rounded-lg font-medium transition-all shadow-lg ${isSaving
-                                                        ? 'bg-slate-600 cursor-not-allowed text-gray-300'
-                                                        : 'bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-400/50 hover:shadow-cyan-500/30'
+                                                className={`px-5 sm:px-6 py-2.5 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all flex items-center gap-2 ${isSaving
+                                                    ? 'bg-white/5 cursor-not-allowed text-slate-600 border border-white/5'
+                                                    : 'bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white'
                                                     }`}
+                                                whileHover={!isSaving ? { scale: 1.03 } : {}}
+                                                whileTap={!isSaving ? { scale: 0.97 } : {}}
                                             >
-                                                {isSaving ? 'Saving...' : 'Save Preferences'}
-                                            </button>
+                                                {isSaving ? (
+                                                    <><div className="w-3 h-3 border-2 border-slate-500 border-t-white rounded-full animate-spin" /> Syncing...</>
+                                                ) : (
+                                                    'Sync_Preferences'
+                                                )}
+                                            </motion.button>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -187,8 +238,8 @@ const Profile = () => {
                         </AnimatePresence>
                     </div>
                 </div>
-            </motion.div>
-        </div>
+            </div>
+        </motion.div>
     );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaLightbulb, FaUserCircle } from 'react-icons/fa';
+import { FaTerminal, FaUserCircle } from 'react-icons/fa';
 import ComingSoonPopup from './ComingSoonPopup';
 import { useAuth } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
@@ -46,10 +46,10 @@ const Header = () => {
 
     // Navigation items
     const navItems = [
-        { name: 'Home', path: '/' },
-        { name: 'Latest Blog', path: '/blog' },
-        { name: 'All Blogs', path: '/blogs' },
-        { name: 'Latest Jobs', path: '/jobs' },
+        { name: 'Feed', path: '/' },
+        { name: 'Latest', path: '/blog' },
+        { name: 'Archive', path: '/blogs' },
+        { name: 'Jobs', path: '/jobs' },
         { name: 'About', path: '/about' }
     ];
 
@@ -66,80 +66,85 @@ const Header = () => {
     return (
         <>
             <motion.header
-                className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled
-                    ? 'bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 backdrop-blur-sm shadow-lg py-2 sm:py-3'
-                    : 'bg-gradient-to-r from-slate-900 to-gray-900 py-3 sm:py-5'
+                className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 border-b border-white/10 ${scrolled
+                    ? 'bg-[#0a0a0c]/90 backdrop-blur-md py-2 sm:py-3'
+                    : 'bg-[#0a0a0c]/80 backdrop-blur-md py-3 sm:py-4'
                     }`}
             >
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="flex items-center justify-between h-12 sm:h-14">
+                        {/* Logo */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Link to="/" className="flex items-center gap-2">
+                            <Link to="/" className="flex items-center gap-2 sm:gap-3">
                                 <motion.div
                                     whileHover={{
                                         rotate: [0, -10, 10, -10, 0],
                                         transition: { duration: 0.5 }
                                     }}
-                                    className="bg-slate-800 rounded-full p-1.5 sm:p-2 shadow-md border border-cyan-400/50"
+                                    className="bg-[#ec5b13] p-1 sm:p-1.5 rounded-lg"
                                 >
-                                    <FaLightbulb className="text-cyan-400 text-lg sm:text-xl" />
+                                    <FaTerminal className="text-white text-sm sm:text-lg" />
                                 </motion.div>
-                                <div>
-                                    <span className="font-bold text-lg sm:text-xl md:text-2xl text-white">
-                                        Tech<span className="text-cyan-400">Insights</span>AI
-                                    </span>
-                                </div>
+                                <h2 className="text-base text-white sm:text-lg md:text-xl font-bold tracking-tighter uppercase font-mono">
+                                    TechInsights<span className="text-[#ec5b13]">.AI</span>
+                                </h2>
                             </Link>
                         </motion.div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden md:flex items-center space-x-1 lg:space-x-3">
-                            {navItems.map((item, index) => (
-                                <motion.div
-                                    key={item.name}
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 + 0.2 }}
-                                >
-                                    <NavLink
-                                        to={item.path}
-                                        className={({ isActive }) => `
-                                            relative px-3 lg:px-4 py-2 rounded-md text-sm font-medium 
-                                            ${isActive ? 'text-cyan-400' : 'text-gray-100 hover:text-cyan-300'}
-                                        `}
+                        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+                            <div className="flex items-center gap-1 lg:gap-6 font-mono text-xs lg:text-sm uppercase tracking-widest text-slate-400">
+                                {navItems.map((navItem, index) => (
+                                    <motion.div
+                                        key={navItem.name}
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.1 + 0.2 }}
                                     >
-                                        {({ isActive }) => (
-                                            <>
-                                                {isActive && (
-                                                    <motion.span
-                                                        layoutId="navIndicator"
-                                                        className="absolute inset-0 bg-fuchsia-900/30 rounded-md -z-10"
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        transition={{ type: "spring", stiffness: 300 }}
-                                                    />
-                                                )}
-                                                <span className="relative z-10">{item.name}</span>
-                                            </>
-                                        )}
-                                    </NavLink>
-                                </motion.div>
-                            ))}
+                                        <NavLink
+                                            to={navItem.path}
+                                            className={({ isActive }) =>
+                                                `relative px-2 lg:px-3 py-2 transition-colors ${isActive ? 'text-white' : 'hover:text-[#ec5b13]'
+                                                }`
+                                            }
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    {isActive && (
+                                                        <motion.span
+                                                            layoutId="navIndicator"
+                                                            className="absolute bottom-0 left-0 right-0 h-px bg-[#ec5b13]"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            transition={{ type: "spring", stiffness: 300 }}
+                                                        />
+                                                    )}
+                                                    <span className="relative z-10">{navItem.name}</span>
+                                                </>
+                                            )}
+                                        </NavLink>
+                                    </motion.div>
+                                ))}
+                            </div>
 
-                            <div className="h-6 w-px bg-gray-700 mx-2"></div>
+                            <div className="h-6 w-px bg-white/10 mx-2 lg:mx-4" />
 
                             {user ? (
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowProfileMenu(!showProfileMenu)}
-                                        className="flex items-center gap-2 text-gray-200 hover:text-white transition-colors py-2 px-3 rounded-md hover:bg-slate-800/50"
+                                        className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors py-2 px-2 lg:px-3 rounded-lg hover:bg-white/5"
                                     >
-                                        <FaUserCircle className="text-xl text-cyan-400" />
-                                        <span className="text-sm font-medium hidden lg:block">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#ec5b13] p-0.5">
+                                            <div className="w-full h-full rounded-full bg-[#0a0a0c] flex items-center justify-center">
+                                                <FaUserCircle className="text-sm text-white" />
+                                            </div>
+                                        </div>
+                                        <span className="text-xs font-mono uppercase tracking-wider hidden lg:block">
                                             {user.email.split('@')[0]}
                                         </span>
                                     </button>
@@ -150,13 +155,13 @@ const Header = () => {
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 overflow-hidden"
+                                                className="absolute right-0 mt-2 w-52 bg-[#14141a] border border-white/10 rounded-xl shadow-2xl py-2 z-50 overflow-hidden"
                                             >
-                                                <div className="px-4 py-2 border-b border-slate-700">
-                                                    <p className="text-xs text-gray-400">Signed in as</p>
-                                                    <p className="text-sm font-semibold text-white truncate">{user.email}</p>
+                                                <div className="px-4 py-3 border-b border-white/5">
+                                                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Signed_In_As</p>
+                                                    <p className="text-sm font-bold text-white truncate mt-1">{user.email}</p>
                                                     {user.role === 'admin' && (
-                                                        <span className="inline-block mt-1 px-2 py-0.5 bg-fuchsia-900/50 text-fuchsia-300 text-xs rounded border border-fuchsia-500/30">
+                                                        <span className="inline-block mt-1.5 px-2 py-0.5 bg-[#ec5b13]/10 text-[#ec5b13] text-[10px] font-mono uppercase rounded border border-[#ec5b13]/20">
                                                             Admin
                                                         </span>
                                                     )}
@@ -165,22 +170,22 @@ const Header = () => {
                                                     <Link
                                                         to="/profile"
                                                         onClick={() => setShowProfileMenu(false)}
-                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                                                        className="block w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors font-mono text-xs uppercase tracking-wider"
                                                     >
-                                                        Your Profile
+                                                        Your_Profile
                                                     </Link>
                                                     <Link
                                                         to="/bookmarks"
                                                         onClick={() => setShowProfileMenu(false)}
-                                                        className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                                                        className="block w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors font-mono text-xs uppercase tracking-wider"
                                                     >
                                                         Bookmarks
                                                     </Link>
                                                     <button
                                                         onClick={handleLogout}
-                                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700/50 transition-colors"
+                                                        className="w-full text-left px-4 py-2.5 text-red-400 hover:bg-white/5 transition-colors font-mono text-xs uppercase tracking-wider"
                                                     >
-                                                        Sign out
+                                                        Sign_Out
                                                     </button>
                                                 </div>
                                             </motion.div>
@@ -188,18 +193,18 @@ const Header = () => {
                                     </AnimatePresence>
                                 </div>
                             ) : (
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center gap-2">
                                     <Link
                                         to="/login"
-                                        className="text-gray-200 hover:text-cyan-300 px-3 py-2 text-sm font-medium transition-colors"
+                                        className="text-slate-300 hover:text-white px-2 lg:px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors"
                                     >
-                                        Log in
+                                        Log_In
                                     </Link>
                                     <Link
                                         to="/register"
-                                        className="bg-cyan-600/20 text-cyan-400 border border-cyan-500/50 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-cyan-500 hover:text-white transition-all shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                                        className="bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white px-3 lg:px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider font-bold transition-all"
                                     >
-                                        Sign up
+                                        Sign_Up
                                     </Link>
                                 </div>
                             )}
@@ -207,22 +212,22 @@ const Header = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="hidden lg:block ml-4 bg-fuchsia-600 text-white px-5 py-1.5 rounded-full font-medium text-sm shadow-md shadow-fuchsia-700/30 hover:shadow-lg hover:bg-fuchsia-500 transition-all border border-fuchsia-400/50"
+                                className="hidden lg:block ml-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-1.5 rounded-lg font-mono text-xs uppercase tracking-wider font-bold transition-all"
                                 onClick={handleSubscribeClick}
                             >
                                 Subscribe
                             </motion.button>
                         </nav>
 
-                        {/* Mobile Menu Button - Enhanced with smoother animations */}
+                        {/* Mobile Menu Button */}
                         <motion.button
-                            className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                            className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/5 text-white border border-white/10"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             aria-label="Toggle menu"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             whileTap={{ scale: 0.9 }}
-                            style={{ position: 'relative', zIndex: 101 }} // Ensure button is above overlay
+                            style={{ position: 'relative', zIndex: 101 }}
                         >
                             <motion.div
                                 animate={isMenuOpen ? "open" : "closed"}
@@ -257,18 +262,18 @@ const Header = () => {
                 </div>
             </motion.header>
 
-            {/* Mobile Menu Overlay - Enhanced with smoother animations and transitions */}
+            {/* Mobile Menu Overlay */}
             {createPortal(
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
-                            className="fixed inset-0 z-[90] bg-gradient-to-br from-slate-900/98 to-gray-900/98 backdrop-blur-sm md:hidden"
+                            className="fixed inset-0 z-[90] bg-[#0a0a0c]/98 backdrop-blur-sm md:hidden"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div className="flex flex-col h-full pt-28 sm:pt-24 px-4 sm:px-6"> {/* Increased/Adjusted padding-top to avoid overlap with header */}
+                            <div className="flex flex-col h-full pt-24 sm:pt-24 px-4 sm:px-6">
                                 <motion.nav
                                     className="flex flex-col space-y-1 sm:space-y-2 mt-4"
                                     initial="closed"
@@ -279,9 +284,9 @@ const Header = () => {
                                         closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } }
                                     }}
                                 >
-                                    {navItems.map((item) => (
+                                    {navItems.map((navItem) => (
                                         <motion.div
-                                            key={item.name}
+                                            key={navItem.name}
                                             variants={{
                                                 open: { opacity: 1, y: 0 },
                                                 closed: { opacity: 0, y: 20 }
@@ -289,16 +294,16 @@ const Header = () => {
                                             transition={{ duration: 0.4 }}
                                         >
                                             <NavLink
-                                                to={item.path}
+                                                to={navItem.path}
                                                 className={({ isActive }) =>
-                                                    `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-medium rounded-xl transition-colors ${isActive
-                                                        ? 'bg-fuchsia-900/20 text-cyan-400 border border-fuchsia-500/30'
-                                                        : 'text-gray-100 hover:bg-slate-800/50 hover:text-cyan-300'
+                                                    `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors ${isActive
+                                                        ? 'bg-[#ec5b13]/10 text-[#ec5b13] border border-[#ec5b13]/20'
+                                                        : 'text-slate-100 hover:bg-white/5 hover:text-white'
                                                     }`
                                                 }
                                                 onClick={() => setIsMenuOpen(false)}
                                             >
-                                                {item.name}
+                                                {navItem.name}
                                             </NavLink>
                                         </motion.div>
                                     ))}
@@ -314,9 +319,9 @@ const Header = () => {
                                             <NavLink
                                                 to="/bookmarks"
                                                 className={({ isActive }) =>
-                                                    `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-medium rounded-xl transition-colors ${isActive
-                                                        ? 'bg-fuchsia-900/20 text-cyan-400 border border-fuchsia-500/30'
-                                                        : 'text-gray-100 hover:bg-slate-800/50 hover:text-cyan-300'
+                                                    `block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors ${isActive
+                                                        ? 'bg-[#ec5b13]/10 text-[#ec5b13] border border-[#ec5b13]/20'
+                                                        : 'text-slate-100 hover:bg-white/5 hover:text-white'
                                                     }`
                                                 }
                                                 onClick={() => setIsMenuOpen(false)}
@@ -333,7 +338,7 @@ const Header = () => {
                                         className="pt-4 sm:pt-6"
                                     >
                                         <button
-                                            className="w-full bg-fuchsia-600 text-white py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-medium shadow-lg text-center text-base sm:text-lg border border-fuchsia-400/50"
+                                            className="w-full bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-base sm:text-lg transition-all"
                                             onClick={handleSubscribeClick}
                                         >
                                             Subscribe
@@ -345,9 +350,9 @@ const Header = () => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.6 }}
-                                        className="text-center text-cyan-300/70 text-xs sm:text-sm"
+                                        className="text-center font-mono text-[10px] text-slate-600 uppercase tracking-[0.3em]"
                                     >
-                                        © {new Date().getFullYear()} TechInsights AI
+                                        © {new Date().getFullYear()} TECHINSIGHTS_AI // ALL_DATA_SYNTHESIZED
                                     </motion.div>
                                 </div>
                             </div>
