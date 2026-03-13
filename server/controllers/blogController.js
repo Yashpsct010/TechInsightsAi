@@ -136,24 +136,45 @@ async function withRetries(fn, maxRetries = 3, baseDelayMs = 2000) {
 /**
  * Fetches recent news headlines and summaries from RSS feeds based on genre.
  * @param {string | null} genre - The genre of the blog.
- * @returns {Promise<string>} A string containing the extracted news context.
+ * @returns {Promise<string>} A string containing the extracted news context with explicit source URLs.
  */
 async function fetchRecentNews(genre) {
   const feeds = {
-    general: ["https://techcrunch.com/feed/"],
-    "ai-ml": ["https://www.artificialintelligence-news.com/feed/"],
-    cybersecurity: ["https://thehackernews.com/rss"],
-    coding: ["https://dev.to/feed"],
-    "emerging-tech": ["https://www.wired.com/feed/rss"],
+    general: [
+      "https://techcrunch.com/feed/",
+      "https://www.theverge.com/rss/index.xml",
+      "https://www.wired.com/feed/rss"
+    ],
+    "ai-ml": [
+      "https://www.artificialintelligence-news.com/feed/",
+      "https://venturebeat.com/category/ai/feed/",
+      "https://news.mit.edu/rss/topic/artificial-intelligence2"
+    ],
+    cybersecurity: [
+      "https://feeds.feedburner.com/TheHackersNews",
+      "https://krebsonsecurity.com/feed/",
+      "https://threatpost.com/feed/"
+    ],
+    coding: [
+      "https://dev.to/feed",
+      "https://www.freecodecamp.org/news/rss/",
+      "https://stackoverflow.blog/feed/"
+    ],
+    "emerging-tech": [
+      "https://www.technologyreview.com/feed/",
+      "https://spectrum.ieee.org/rss/all",
+      "https://arstechnica.com/feed/"
+    ],
     "tech-news": [
       "https://techcrunch.com/feed/",
       "https://www.theverge.com/rss/index.xml",
+      "https://www.engadget.com/rss.xml"
     ],
   };
 
   const selectedFeeds = feeds[genre] || feeds["general"];
   let newsContext =
-    "Here are some of the latest advancements and news articles from the last 48 hours to ground your blog post:\n\n";
+    "Here are the LATEST REAL-WORLD news articles from the last 48 hours. USE THESE AS THE PRIMARY SOURCE FOR YOUR CONTENT AND LINKS:\n\n";
   let hasNews = false;
 
   for (const feedUrl of selectedFeeds) {
@@ -173,8 +194,10 @@ async function fetchRecentNews(genre) {
           summary = item.description.substring(0, 300) + "...";
         }
 
+        newsContext += `ARTICLE_SOURCE:\n`;
         newsContext += `- Title: ${item.title}\n`;
-        newsContext += `  Summary: ${summary}\n\n`;
+        newsContext += `- URL: ${item.link}\n`;
+        newsContext += `- Summary: ${summary}\n\n`;
       });
     } catch (error) {
       console.warn(`Failed to fetch RSS feed ${feedUrl}:`, error.message);
@@ -195,24 +218,24 @@ async function getAiGeneratedContent(genre = null) {
   // 1. Fetch real-world advancements context
   const newsContext = await fetchRecentNews(genre);
 
-  const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about a current trending technology topic. 
+  const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about current trending tech topics. 
         ${genre ? `Focus specifically on ${genre}. ` : ""}
-        You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable for tech enthusiasts, developers, and industry professionals.
+        You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable.
 
-        ${newsContext ? `CRITICAL INSTRUCTION - BASE YOUR BLOG ON THESE RECENT ADVANCEMENTS: \n${newsContext}` : ""}
+        ${newsContext ? `CRITICAL INSTRUCTION: USE THESE REAL NEWS SOURCES FOR YOUR BLOG. 
+        MANDATORY: For the "links" section, ONLY USE THE URLs PROVIDED BELOW. DO NOT HALLUCINATE OR CREATE NEW URLs.
+        
+        ${newsContext}` : "Provide relevant links to established tech sites like TechCrunch, Wired, The Verge, or Ars Technica."}
 
         Blog Focus Areas:
-        Your article should include at least three of the following topics:
-
-        - Tech Hacks & Coding Tricks - New shortcuts, tools, or techniques to boost productivity.
-        - Latest Software & Feature Releases - Newly launched software, libraries, or updates from big tech companies.
-        - AI & Machine Learning Advances - New AI models, research breakthroughs, and their real-world impact.
-        - Emerging Technologies - Blockchain, Quantum Computing, Web3, AR/VR, etc.
-        - Cybersecurity Trends - Latest security threats, best practices, or data privacy concerns.
-        - Major Tech News - Big announcements from companies like Google, Microsoft, OpenAI, etc.
+        Your article should include:
+        - Tech Hacks & Coding Tricks
+        - Latest Software & Feature Releases
+        - AI & Machine Learning Advances
+        - Emerging Technologies (Quantum, Blockchain, etc.)
+        - Cybersecurity Trends
             
         The article should be comprehensive (around 800-1000 words) and include:
-        
         1. An engaging title
         2. An introduction to the topic
         3. Key points and analysis
@@ -221,30 +244,26 @@ async function getAiGeneratedContent(genre = null) {
         6. A conclusion
         
         Also include:
-        - 3-5 related resource links with titles and brief descriptions
-        - A suggestion for an image that could accompany this article (describe it in detail)
-        A detailed description of an image that could accompany this article, including specific search terms and resources (like a URL) where such an image could be found.
+        - 3-5 related resource links from the ARTICLE_SOURCE list above (MANDATORY: use the provided URLs).
+        - A suggestion for an image that could accompany this article (describe it in detail).
         
         Format your response as JSON with the following structure:
         {
           "title": "The blog post title",
           "body": "The full HTML formatted blog post content with proper h2, h3, p, ul, li tags, etc.",
-          "image": "A link to a relevant royalty-free image or detailed description for an image to use",
+          "image": "detailed description for an image to use",
           "imageAlt": "Alt text for the image",
           "imageCaption": "A brief caption for the image",
           "links": [
             {
-              "title": "Resource title",
-              "url": "Resource URL",
-              "description": "Brief description of the resource",
-              "image": "A link to a relevant royalty-free image or detailed description for an image to use",
-              "imageAlt": "Alt text for the image",
-              "imageCaption": "A brief caption for the image"
+              "title": "Resource title (from provided sources)",
+              "url": "REAL_URL_FROM_PROVIDED_SOURCES",
+              "description": "Brief description of why this resource is relevant"
             }
           ]
         }
         
-        Focus on providing valuable insights and accurate information about current technology trends.`;
+        Focus on providing valuable insights and accurate information. EXACTLY follow the JSON structure.`;
 
   const requestBody = {
     contents: [{ parts: [{ text: prompt }] }],

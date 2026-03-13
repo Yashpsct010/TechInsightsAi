@@ -335,14 +335,55 @@ const Header = () => {
                                             open: { opacity: 1, y: 0 },
                                             closed: { opacity: 0, y: 20 }
                                         }}
-                                        className="pt-4 sm:pt-6"
+                                        className="pt-4 sm:pt-6 space-y-3"
                                     >
                                         <button
                                             className="w-full bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white py-3 sm:py-4 px-3 sm:px-4 rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-base sm:text-lg transition-all"
-                                            onClick={handleSubscribeClick}
+                                            onClick={(e) => {
+                                                setIsMenuOpen(false);
+                                                handleSubscribeClick(e);
+                                            }}
                                         >
                                             Subscribe
                                         </button>
+
+                                        {!user ? (
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Link
+                                                    to="/login"
+                                                    className="py-3 px-4 bg-white/5 text-slate-300 hover:text-white rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-sm transition-colors border border-white/10"
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Log_In
+                                                </Link>
+                                                <Link
+                                                    to="/register"
+                                                    className="py-3 px-4 bg-white/10 text-white rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-sm transition-colors border border-white/20"
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Sign_Up
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Link
+                                                    to="/profile"
+                                                    className="py-3 px-4 bg-white/5 text-slate-300 hover:text-white rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-sm transition-colors border border-white/10"
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Profile
+                                                </Link>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsMenuOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className="py-3 px-4 bg-red-500/10 text-red-500 rounded-xl font-mono font-bold uppercase tracking-tighter text-center text-sm transition-colors border border-red-500/20"
+                                                >
+                                                    Sign_Out
+                                                </button>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 </motion.nav>
                                 <div className="mt-auto pb-8 sm:pb-10">

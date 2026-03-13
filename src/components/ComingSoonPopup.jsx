@@ -13,7 +13,7 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center"
                         onClick={onClose}
                     />
 
@@ -24,7 +24,7 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
                         exit={{ scale: 0.8, opacity: 0, y: 30 }}
                         transition={{ type: "spring", damping: 20, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-11/12 max-w-md"
+                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[200] w-11/12 max-w-md"
                     >
                         <div className="bg-[#121212] rounded-2xl shadow-2xl overflow-hidden border border-white/10 relative">
                             {/* Accent line */}
