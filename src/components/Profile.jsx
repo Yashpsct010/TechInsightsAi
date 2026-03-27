@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTerminal, FaUser, FaSlidersH, FaBookmark, FaFingerprint, FaShieldAlt } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import authService from '../services/authService';
 
 const GENRES = [
     { id: 'ai-ml', name: 'AI & Machine Learning', icon: '🤖', code: 'AI_ML' },
@@ -15,8 +17,28 @@ const Profile = () => {
     const { user, updatePreferences } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [selectedPreferences, setSelectedPreferences] = useState(user?.preferences || []);
+    const [newsletterSubscribed, setNewsletterSubscribed] = useState(user?.newsletterSubscribed || false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState({ text: '', type: '' });
+    const [savedBlogs, setSavedBlogs] = useState([]);
+    const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+
+    React.useEffect(() => {
+        if (activeTab === 'saved') {
+            const fetchSaved = async () => {
+                setIsLoadingSaved(true);
+                try {
+                    const data = await authService.getBookmarks();
+                    setSavedBlogs(data || []);
+                } catch (err) {
+                    console.error("Failed to fetch bookmarks:", err);
+                } finally {
+                    setIsLoadingSaved(false);
+                }
+            };
+            fetchSaved();
+        }
+    }, [activeTab]);
 
     const handleTogglePreference = (genreId) => {
         setSelectedPreferences(prev =>
@@ -30,7 +52,7 @@ const Profile = () => {
         setIsSaving(true);
         setSaveMessage({ text: '', type: '' });
 
-        const success = await updatePreferences(selectedPreferences);
+        const success = await updatePreferences(selectedPreferences, newsletterSubscribed);
 
         if (success) {
             setSaveMessage({ text: 'Preferences synced successfully!', type: 'success' });
@@ -44,6 +66,7 @@ const Profile = () => {
     const tabs = [
         { id: 'profile', label: 'Node_Profile', icon: FaUser },
         { id: 'preferences', label: 'Config_Prefs', icon: FaSlidersH },
+        { id: 'saved', label: 'Saved_Data', icon: FaBookmark }
     ];
 
     return (
@@ -95,11 +118,6 @@ const Profile = () => {
                                     </button>
                                 );
                             })}
-                            {/* Disabled bookmark link */}
-                            <button className="text-left px-4 py-2.5 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider text-slate-600 flex items-center gap-2 cursor-not-allowed">
-                                <FaBookmark className="text-xs shrink-0" />
-                                Saved_Data
-                            </button>
                         </nav>
 
                         {/* User badge */}
@@ -203,6 +221,23 @@ const Profile = () => {
                                             })}
                                         </div>
 
+                                        <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl mb-6">
+                                            <div>
+                                                <h3 className="font-bold text-sm text-white uppercase tracking-tight">Neural_Feed_Newsletter</h3>
+                                                <p className="text-xs text-slate-500 font-mono mt-1">Receive weekly intel summaries.</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setNewsletterSubscribed(!newsletterSubscribed)}
+                                                className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${newsletterSubscribed ? 'bg-[#ec5b13]' : 'bg-slate-700'}`}
+                                            >
+                                                <motion.div
+                                                    className="w-4 h-4 rounded-full bg-white absolute"
+                                                    animate={{ left: newsletterSubscribed ? 'calc(100% - 20px)' : '4px' }}
+                                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                                />
+                                            </button>
+                                        </div>
+
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-white/5 pt-5 sm:pt-6 gap-3">
                                             <div>
                                                 {saveMessage.text && (
@@ -232,6 +267,44 @@ const Profile = () => {
                                                 )}
                                             </motion.button>
                                         </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'saved' && (
+                                <motion.div
+                                    key="saved"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="space-y-5 sm:space-y-6"
+                                >
+                                    <div className="p-5 sm:p-6 bg-[#121212] border border-white/10 rounded-2xl">
+                                        <h2 className="text-base sm:text-lg font-bold text-white mb-1 uppercase tracking-tight flex items-center gap-2">
+                                            <FaBookmark className="text-[#8b5cf6]" /> Saved_Intel
+                                        </h2>
+                                        <p className="text-xs sm:text-sm text-slate-500 font-mono mb-6">// Your archived data packets</p>
+
+                                        {isLoadingSaved ? (
+                                            <div className="flex justify-center py-8">
+                                                <div className="w-8 h-8 border-2 border-[#ec5b13] border-t-transparent rounded-full animate-spin" />
+                                            </div>
+                                        ) : savedBlogs.length > 0 ? (
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {savedBlogs.map(blog => (
+                                                    <div key={blog._id} className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                                                        <h3 className="font-bold text-sm text-white mb-2">{blog.title}</h3>
+                                                        <p className="text-xs text-slate-400 mb-4 line-clamp-2">{blog.summary || blog.content?.substring(0, 100)}</p>
+                                                        <Link to={`/blog/${blog._id}`} className="text-[#ec5b13] text-xs font-mono uppercase tracking-widest font-bold">Initialize_Read &rarr;</Link>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12 text-slate-500 font-mono text-sm">
+                                                No data archived. Browse the Neural_Feed to save Intel.
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             )}

@@ -36,6 +36,7 @@ exports.registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
         preferences: user.preferences,
+        newsletterSubscribed: user.newsletterSubscribed,
         token: generateToken(user._id),
       });
     } else {
@@ -68,6 +69,7 @@ exports.loginUser = async (req, res) => {
         email: user.email,
         role: user.role,
         preferences: user.preferences,
+        newsletterSubscribed: user.newsletterSubscribed,
         token: generateToken(user._id),
       });
     } else {
@@ -97,6 +99,7 @@ exports.getUserProfile = async (req, res) => {
         email: user.email,
         role: user.role,
         preferences: user.preferences,
+        newsletterSubscribed: user.newsletterSubscribed,
         bookmarks: user.bookmarks,
       });
     } else {
@@ -115,22 +118,27 @@ exports.getUserProfile = async (req, res) => {
  */
 exports.updatePreferences = async (req, res) => {
   try {
-    const { preferences } = req.body;
-
-    // Validate that preferences is an array
-    if (!Array.isArray(preferences)) {
-      return res.status(400).json({ message: "Preferences must be an array" });
-    }
+    const { preferences, newsletterSubscribed } = req.body;
 
     const user = await User.findById(req.user._id);
 
     if (user) {
-      user.preferences = preferences;
+      if (preferences !== undefined) {
+        if (!Array.isArray(preferences)) {
+          return res.status(400).json({ message: "Preferences must be an array" });
+        }
+        user.preferences = preferences;
+      }
+      if (newsletterSubscribed !== undefined && typeof newsletterSubscribed === 'boolean') {
+        user.newsletterSubscribed = newsletterSubscribed;
+      }
+
       const updatedUser = await user.save();
 
       res.json({
         message: "Preferences updated successfully",
         preferences: updatedUser.preferences,
+        newsletterSubscribed: updatedUser.newsletterSubscribed,
       });
     } else {
       res.status(404).json({ message: "User not found" });

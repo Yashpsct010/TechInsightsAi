@@ -63,6 +63,7 @@ const connectToDB = require("./utils/db");
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", blogRoutes);
 app.use("/api/jobs", require("./routes/jobRoutes"));
+app.use("/api/newsletter", require("./routes/newsletterRoutes"));
 
 // Health check route - simplified
 app.get("/health", (req, res) => res.json({ status: "ok" }));
@@ -95,7 +96,9 @@ if (process.env.VERCEL) {
       // Only run cron jobs in traditional environment
       if (!process.env.VERCEL) {
         const setupCronJobs = require("./cron/blogGenerator");
+        const { setupNewsletterCron } = require("./cron/newsletterGenerator");
         setupCronJobs();
+        setupNewsletterCron();
       }
     });
   };

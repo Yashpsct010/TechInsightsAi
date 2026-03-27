@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaTerminal } from 'react-icons/fa';
+import { FaTimes, FaTerminal, FaEnvelope, FaCheck } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 
-const ComingSoonPopup = ({ isOpen, onClose }) => {
+const NewsletterPopup = ({ isOpen, onClose }) => {
+    const { user, updatePreferences } = useAuth();
+    const [loading, setLoading] = useState(false);
+
+    const handleToggle = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            await updatePreferences({ newsletterSubscribed: !user.newsletterSubscribed });
+        } catch (error) {
+            console.error("Failed to update preferences", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -70,7 +87,7 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
                                             repeatType: "reverse"
                                         }}
                                     >
-                                        <FaTerminal className="text-[#ec5b13] text-xl" />
+                                        {user?.newsletterSubscribed ? <FaCheck className="text-green-500 text-xl" /> : <FaEnvelope className="text-[#ec5b13] text-xl" />}
                                     </motion.div>
 
                                     {/* Title */}
@@ -80,7 +97,7 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.2 }}
                                     >
-                                        Coming <span className="text-[#ec5b13]">Soon</span>
+                                        Neural <span className="text-[#ec5b13]">Feed</span>
                                     </motion.h3>
 
                                     {/* Description */}
@@ -89,21 +106,37 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.3 }}
-                                    >This module is currently under development process. Stay tuned for updates!
+                                    >
+                                        {!user 
+                                            ? "You must be authenticated to subscribe to the Neural Newsletter." 
+                                            : user.newsletterSubscribed 
+                                                ? "You are currently synced to the weekly data drops! Do you wish to unsubscribe?" 
+                                                : "Subscribe to receive weekly architectural blueprints and intelligence drops."}
                                     </motion.p>
 
                                     {/* Button */}
-                                    <motion.button
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.97 }}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.4 }}
-                                        onClick={onClose}
-                                        className="bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white px-6 py-3 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all"
-                                    >
-                                        Acknowledged →
-                                    </motion.button>
+                                    {!user ? (
+                                        <Link
+                                            to="/login"
+                                            className="inline-block bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white px-6 py-3 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all"
+                                            onClick={onClose}
+                                        >
+                                            Authenticate Now
+                                        </Link>
+                                    ) : (
+                                        <motion.button
+                                            whileHover={{ scale: 1.03 }}
+                                            whileTap={{ scale: 0.97 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.4 }}
+                                            onClick={handleToggle}
+                                            disabled={loading}
+                                            className={`${user.newsletterSubscribed ? 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20' : 'bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white'} px-6 py-3 rounded-xl font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all w-full`}
+                                        >
+                                            {loading ? 'Processing...' : user.newsletterSubscribed ? 'Unsubscribe' : 'Initialize Sync'}
+                                        </motion.button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -114,4 +147,4 @@ const ComingSoonPopup = ({ isOpen, onClose }) => {
     );
 };
 
-export default ComingSoonPopup;
+export default NewsletterPopup;

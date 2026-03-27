@@ -1,0 +1,23 @@
+name: Dispatch Weekly Newsletter
+
+on:
+  schedule:
+    - cron: "0 17 * * 5" # Run every Friday at 17:00 UTC
+  workflow_dispatch: # Allow manual triggering for testing and off-schedule drops
+
+jobs:
+  dispatch-newsletter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Basic Server Wakeup
+        run: |
+          echo "Pinging health endpoint to warm up serverless instances..."
+          curl --fail -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check timeout, continuing..."
+
+      - name: Trigger Newsletter Dispatch
+        run: |
+          echo "Dispatching Weekly Newsletter..."
+          
+          # Send the API request to trigger newsletter delivery
+          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/newsletter/dispatch" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

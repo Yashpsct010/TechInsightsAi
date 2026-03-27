@@ -141,6 +141,7 @@ async function withRetries(fn, maxRetries = 3, baseDelayMs = 2000) {
 async function fetchRecentNews(genre) {
   const feeds = {
     general: [
+      "https://medium.com/feed/tag/technology",
       "https://techcrunch.com/feed/",
       "https://www.theverge.com/rss/index.xml",
       "https://www.wired.com/feed/rss"
@@ -166,6 +167,7 @@ async function fetchRecentNews(genre) {
       "https://arstechnica.com/feed/"
     ],
     "tech-news": [
+      "https://medium.com/feed/tag/technology",
       "https://techcrunch.com/feed/",
       "https://www.theverge.com/rss/index.xml",
       "https://www.engadget.com/rss.xml"

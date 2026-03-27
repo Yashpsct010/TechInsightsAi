@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import { formatDate } from './utils/formatters';
 import { FaBookmark, FaArrowRight, FaCalendarAlt } from 'react-icons/fa';
+import ConfirmDialog from './ConfirmDialog';
 
 const Bookmarks = () => {
     const { user, toggleBookmark } = useAuth();
@@ -13,6 +14,7 @@ const Bookmarks = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [failedImages, setFailedImages] = useState(new Set());
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
     useEffect(() => {
         if (!user) {
@@ -35,9 +37,16 @@ const Bookmarks = () => {
         }
     };
 
-    const handleBookmark = async (e, blogId) => {
+    const handleBookmarkPrompt = (e, blogId) => {
         e.preventDefault();
         e.stopPropagation();
+        setConfirmDeleteId(blogId);
+    };
+
+    const confirmDelete = async () => {
+        if (!confirmDeleteId) return;
+        const blogId = confirmDeleteId;
+        setConfirmDeleteId(null);
         try {
             await toggleBookmark(blogId);
             setBookmarks(prev => prev.filter(b => b._id !== blogId));
@@ -183,7 +192,7 @@ const Bookmarks = () => {
                                     >
                                         {/* Remove Bookmark */}
                                         <button
-                                            onClick={(e) => handleBookmark(e, blog._id)}
+                                            onClick={(e) => handleBookmarkPrompt(e, blog._id)}
                                             className="absolute top-3 right-3 z-10 p-2 rounded-lg backdrop-blur-sm text-[#ec5b13] bg-[#ec5b13]/10 border border-[#ec5b13]/20 hover:bg-[#ec5b13]/20 transition-all"
                                             title="Remove Bookmark"
                                         >
@@ -243,6 +252,14 @@ const Bookmarks = () => {
                     )}
                 </AnimatePresence>
             </div>
+            
+            <ConfirmDialog 
+                isOpen={!!confirmDeleteId} 
+                title="Remove Bookmark"
+                message="Are you sure you want to remove this article from your saved bookmarks?"
+                onConfirm={confirmDelete}
+                onCancel={() => setConfirmDeleteId(null)}
+            />
         </motion.div>
     );
 };

@@ -33,6 +33,10 @@ const UserSchema = new mongoose.Schema(
         ref: "Blog",
       },
     ],
+    newsletterSubscribed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

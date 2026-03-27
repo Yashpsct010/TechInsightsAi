@@ -84,14 +84,14 @@ const getProfile = async () => {
 };
 
 // Update user preferences
-const updatePreferences = async (preferences) => {
+const updatePreferences = async (preferences, newsletterSubscribed) => {
   const response = await fetch(`${API_URL}/auth/preferences`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeader(),
     },
-    body: JSON.stringify({ preferences }),
+    body: JSON.stringify({ preferences, newsletterSubscribed }),
   });
 
   const data = await response.json();
@@ -107,10 +107,11 @@ const updatePreferences = async (preferences) => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
     user.preferences = data.preferences;
+    user.newsletterSubscribed = data.newsletterSubscribed;
     localStorage.setItem("user", JSON.stringify(user));
   }
 
-  return data.preferences;
+  return data;
 };
 
 // Toggle bookmark for user

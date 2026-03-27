@@ -70,10 +70,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
-    const updatePreferences = async (preferences) => {
+    const updatePreferences = async (preferences, newsletterSubscribed) => {
         try {
-            const updatedPreferences = await authService.updatePreferences(preferences);
-            setUser(prev => ({ ...prev, preferences: updatedPreferences }));
+            const data = await authService.updatePreferences(preferences, newsletterSubscribed);
+            setUser(prev => ({ ...prev, preferences: data.preferences, newsletterSubscribed: data.newsletterSubscribed }));
             return true;
         } catch (err) {
             setError(err.message);

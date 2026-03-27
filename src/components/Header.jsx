@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTerminal, FaUserCircle } from 'react-icons/fa';
-import ComingSoonPopup from './ComingSoonPopup';
+import NewsletterPopup from './NewsletterPopup';
 import { useAuth } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
 
@@ -49,7 +49,7 @@ const Header = () => {
         { name: 'Feed', path: '/' },
         { name: 'Latest', path: '/blog' },
         { name: 'Archive', path: '/blogs' },
-        { name: 'Jobs', path: '/jobs' },
+        ...(user?.role === 'admin' ? [{ name: 'Jobs', path: '/jobs' }] : []),
         { name: 'About', path: '/about' }
     ];
 
@@ -404,7 +404,7 @@ const Header = () => {
             )}
 
             {/* Coming Soon Popup */}
-            <ComingSoonPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
+            <NewsletterPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
         </>
     );
 };

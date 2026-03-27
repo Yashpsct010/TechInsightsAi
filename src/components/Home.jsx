@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaBrain, FaRocket, FaLayerGroup, FaArrowRight, FaDatabase } from 'react-icons/fa';
+import WhatsNewCard from './WhatsNewCard';
 
 const Home = () => {
     const container = {
@@ -91,6 +92,8 @@ const Home = () => {
             transition={{ duration: 0.5 }}
             className="min-h-screen bg-[#0a0a0c] text-slate-100 pt-16 sm:pt-20 md:pt-28 selection:bg-[#ec5b13] selection:text-white overflow-x-hidden"
         >
+            <WhatsNewCard />
+            
             {/* Hero Section */}
             <section className="relative pt-6 sm:pt-12 md:pt-8 pb-12 sm:pb-20 md:pb-32 px-4 sm:px-6 overflow-hidden">
                 {/* Background Glow */}

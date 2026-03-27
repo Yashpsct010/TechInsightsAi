@@ -38,7 +38,14 @@ function App() {
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/blogs" element={<BlogsPage />} />
-                <Route path="/jobs" element={<Jobs />} />
+                <Route 
+                  path="/jobs" 
+                  element={
+                    <ProtectedRoute requireAdmin={true}>
+                      <Jobs />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route path="/blog/:id" element={<BlogDetailPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

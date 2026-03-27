@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaFingerprint, FaCalendarAlt, FaClock, FaArrowRight, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaFingerprint, FaCalendarAlt, FaClock, FaArrowRight, FaExternalLinkAlt, FaBookmark, FaRegBookmark } from 'react-icons/fa';
 import { useLatestBlog } from './hooks/useLatestBlog';
+import { useAuth } from '../context/AuthContext';
+import NewsletterPopup from './NewsletterPopup';
 
 const Blog = () => {
     const { blog, loading, error, isRetrying, setGenre, retry } = useLatestBlog(null);
+    const { user, toggleBookmark } = useAuth();
     const [uiSelectedGenre, setUiSelectedGenre] = useState('all');
     const [imageError, setImageError] = useState(false);
+    const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [blog]);
 
     const handleGenreChange = (newGenre) => {
         setUiSelectedGenre(newGenre);
@@ -175,23 +183,41 @@ const Blog = () => {
 
                                 {/* Metadata Row */}
                                 <motion.div
-                                    className="flex flex-wrap items-center gap-4 sm:gap-6 pb-6 sm:pb-8 mb-8 sm:mb-10 border-b border-white/5 font-mono text-xs sm:text-sm text-slate-400"
+                                    className="flex flex-wrap items-center justify-between gap-4 pb-6 sm:pb-8 mb-8 sm:mb-10 border-b border-white/5 font-mono text-xs sm:text-sm text-slate-400"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <FaFingerprint className="text-[#8b5cf6]" />
-                                        <span>Auth: TechInsights_AI</span>
+                                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                        <div className="flex items-center gap-2">
+                                            <FaFingerprint className="text-[#8b5cf6]" />
+                                            <span>Auth: TechInsights_AI</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <FaCalendarAlt className="text-[#8b5cf6]" />
+                                            <span>Timestamp: {new Date(blog.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <FaClock className="text-[#8b5cf6]" />
+                                            <span>{readingTime} Min Read</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaCalendarAlt className="text-[#8b5cf6]" />
-                                        <span>Timestamp: {new Date(blog.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaClock className="text-[#8b5cf6]" />
-                                        <span>{readingTime} Min Read</span>
-                                    </div>
+
+                                    {user && (
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => toggleBookmark(blog._id || blog.id)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded border transition-colors ${
+                                                user?.bookmarks?.includes(blog._id || blog.id) 
+                                                ? 'bg-[#ec5b13]/20 border-[#ec5b13]/50 text-[#ec5b13]' 
+                                                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {user?.bookmarks?.includes(blog._id || blog.id) ? <FaBookmark /> : <FaRegBookmark />}
+                                            {user?.bookmarks?.includes(blog._id || blog.id) ? 'Saved' : 'Save_Data'}
+                                        </motion.button>
+                                    )}
                                 </motion.div>
 
                                 {/* Featured Image */}
@@ -369,7 +395,10 @@ const Blog = () => {
                                             placeholder="Email@Network.io"
                                             type="email"
                                         />
-                                        <button className="w-full py-2 bg-[#ec5b13] text-white text-sm font-bold rounded-lg hover:bg-[#ec5b13]/90 transition-all font-mono uppercase tracking-wider">
+                                        <button 
+                                            onClick={(e) => { e.preventDefault(); setIsSubscribeOpen(true); }}
+                                            className="w-full py-2 bg-[#ec5b13] text-white text-sm font-bold rounded-lg hover:bg-[#ec5b13]/90 transition-all font-mono uppercase tracking-wider"
+                                        >
                                             SUBSCRIBE
                                         </button>
                                     </div>
@@ -379,6 +408,8 @@ const Blog = () => {
                     )}
                 </AnimatePresence>
             </div>
+            
+            <NewsletterPopup isOpen={isSubscribeOpen} onClose={() => setIsSubscribeOpen(false)} />
         </motion.div>
     );
 };

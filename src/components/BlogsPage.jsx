@@ -5,10 +5,9 @@ import { FaArrowRight, FaBookmark, FaRegBookmark, FaCalendarAlt, FaClock, FaSear
 import { fetchBlogArchive } from './services/blogService';
 import { formatDate } from './utils/formatters';
 import { useAuth } from '../context/AuthContext';
-import authService from '../services/authService';
 
 const BlogsPage = () => {
-    const { user } = useAuth();
+    const { user, toggleBookmark } = useAuth();
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,7 +33,7 @@ const BlogsPage = () => {
     ];
 
     const genres = user && user.preferences?.length > 0
-        ? [{ id: 'for-you', name: 'For You ⭐' }, ...baseGenres]
+        ? [{ id: 'for-you', name: 'For You' }, ...baseGenres]
         : baseGenres;
 
     // Date filter options
@@ -99,7 +98,7 @@ const BlogsPage = () => {
             return;
         }
         try {
-            await authService.toggleBookmark(blogId);
+            await toggleBookmark(blogId);
         } catch (err) {
             console.error("Failed to toggle bookmark", err);
         }
@@ -320,6 +319,24 @@ const BlogsPage = () => {
 
                                     <Link to={`/blog/${featuredBlog._id}`} className="block group">
                                         <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] md:aspect-[2.5/1] rounded-2xl overflow-hidden border border-white/10 bg-[#121212]">
+                                            {/* Bookmark Button */}
+                                            {user && (
+                                                <button
+                                                    onClick={(e) => handleBookmark(e, featuredBlog._id)}
+                                                    className={`absolute top-4 right-4 z-20 p-2 rounded-lg backdrop-blur-sm transition-all ${user?.bookmarks?.includes(featuredBlog._id)
+                                                        ? 'text-[#ec5b13] bg-[#ec5b13]/20 border border-[#ec5b13]/30'
+                                                        : 'text-white/70 bg-black/40 border border-white/20 hover:text-[#ec5b13] hover:bg-[#ec5b13]/20'
+                                                        }`}
+                                                    title={user?.bookmarks?.includes(featuredBlog._id) ? "Remove Bookmark" : "Save Bookmark"}
+                                                >
+                                                    {user?.bookmarks?.includes(featuredBlog._id) ? (
+                                                        <FaBookmark className="text-sm sm:text-base" />
+                                                    ) : (
+                                                        <FaRegBookmark className="text-sm sm:text-base" />
+                                                    )}
+                                                </button>
+                                            )}
+
                                             {featuredBlog.image && !failedImages.has(featuredBlog._id) ? (
                                                 <img
                                                     src={featuredBlog.image}

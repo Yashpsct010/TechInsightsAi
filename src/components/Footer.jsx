@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaTwitter, FaLinkedinIn, FaGithub, FaTerminal } from 'react-icons/fa';
-import ComingSoonPopup from './ComingSoonPopup';
+import NewsletterPopup from './NewsletterPopup';
+import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
+    const { user } = useAuth();
     const [isPopupOpen, setIsPopupOpen] = useState(false);
 
     const handleSubscribeClick = (e) => {
@@ -15,7 +17,7 @@ const Footer = () => {
     const interfaceLinks = [
         { name: 'Neural_Feed', path: '/blog' },
         { name: 'Data_Archive', path: '/blogs' },
-        { name: 'Job_Matrix', path: '/jobs' },
+        ...(user?.role === 'admin' ? [{ name: 'Job_Matrix', path: '/jobs' }] : []),
         { name: 'About_Node', path: '/about' }
     ];
 
@@ -172,7 +174,7 @@ const Footer = () => {
             </footer>
 
             {/* Coming Soon Popup */}
-            <ComingSoonPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
+            <NewsletterPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
         </>
     );
 };

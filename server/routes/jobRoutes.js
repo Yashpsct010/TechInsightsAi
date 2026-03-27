@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const jobController = require("../controllers/jobController");
 const rateLimit = require("express-rate-limit");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 // Setup multer for memory storage (we don't want to save PDFs to disk)
 const upload = multer({
@@ -25,12 +26,14 @@ const extractionLimiter = rateLimit({
 // Extract skills from resume (requires a multipart form data with file field "resume")
 router.post(
   "/extract-skills",
+  protect,
+  admin,
   extractionLimiter,
   upload.single("resume"),
   jobController.extractSkills,
 );
 
 // Search for jobs via JSearch API
-router.get("/search", jobController.searchJobs);
+router.get("/search", protect, admin, jobController.searchJobs);
 
 module.exports = router;
