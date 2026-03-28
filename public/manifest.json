@@ -8,8 +8,8 @@
   "display_override": [
     "window-controls-overlay"
   ],
-  "background_color": "#ffffff",
-  "theme_color": "#1e40af",
+  "background_color": "#0a0a0c",
+  "theme_color": "#0a0a0c",
   "orientation": "portrait",
   "categories": [
     "technology",
@@ -46,15 +46,6 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshot1.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "TechInsights AI Home Screen"
     }
   ],
   "shortcuts": [

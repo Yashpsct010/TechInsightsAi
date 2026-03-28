@@ -14,7 +14,8 @@ export default defineConfig({
         name: "Tech Insights AI",
         short_name: "TechInsights",
         description: "Stay updated with the latest tech insights",
-        theme_color: "#ffffff",
+        theme_color: "#0a0a0c",
+        background_color: "#0a0a0c",
         icons: [
           {
             src: "pwa-192x192.png",
