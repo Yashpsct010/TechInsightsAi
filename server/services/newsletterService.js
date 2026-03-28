@@ -38,7 +38,7 @@ const generateNewsletterHTML = (blogs) => {
         html += `
         <div style="margin-bottom: 25px; padding: 15px; background-color: #121212; border-left: 3px solid #ec5b13;">
             <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #e2e8f0;">${blog.title}</h2>
-            <p style="margin: 0 0 10px 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">${blog.summary || blog.content.substring(0, 150) + '...'}</p>
+            <p style="margin: 0 0 10px 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">${(blog.body || '').substring(0, 150) + '...'}</p>
             <a href="${process.env.CLIENT_URL || 'https://techinsightsai.vercel.app'}/blog/${blog._id}" style="display: inline-block; background-color: #ec5b13; color: white; padding: 6px 12px; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 4px;">Initialize_Read</a>
         </div>
         `;
