@@ -2,22 +2,29 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaTrophy } from 'react-icons/fa';
 
-const TRIVIA_ITEMS = [
-    "Neural Network layers have increased by 40% in efficiency.",
-    "Bypassed the mainframe manually without triggering the intrusion alarm.",
-    "System latency sits at an all-time low of 1.2ms.",
-    "Gained access to restricted quantum processing cores.",
-    "Daily Intel: Cybersecurity threats evolved 12% faster this week.",
-    "New cryptographic protocol discovered in the wild.",
-    "Web3 architecture shifts towards decentralized edge nodes."
-];
-
 const WhatsNewCard = () => {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [scratched, setScratched] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
-    const [trivia] = useState(() => TRIVIA_ITEMS[Math.floor(Math.random() * TRIVIA_ITEMS.length)]);
+    const [intel, setIntel] = useState({ intelHook: "Loading encrypted transmission..." });
+
+    useEffect(() => {
+        const fetchIntel = async () => {
+            try {
+                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+                const res = await fetch(`${baseUrl}/intel/today`);
+                const data = await res.json();
+                if (data.success && data.intel) {
+                    setIntel(data.intel);
+                }
+            } catch (error) {
+                console.error("Failed to fetch daily intel:", error);
+                setIntel({ intelHook: "Warning: Disconnected from central intelligence node. Establishing secure link." });
+            }
+        };
+        fetchIntel();
+    }, []);
 
     useEffect(() => {
         const lastSeen = localStorage.getItem('whatsNewLastSeen');
@@ -177,7 +184,12 @@ const WhatsNewCard = () => {
                                     <FaTrophy className="text-4xl text-[#ec5b13] mb-4" />
                                 </motion.div>
                                 <h3 className="font-bold text-white mb-2 uppercase tracking-wider text-xl">Daily Intel</h3>
-                                <p className="text-sm text-slate-300 font-mono leading-relaxed">{trivia}</p>
+                                <p className="text-sm text-slate-300 font-mono leading-relaxed px-4">{intel.intelHook}</p>
+                                {intel.referenceUrl && (
+                                    <a href={intel.referenceUrl} target="_blank" rel="noopener noreferrer" className="mt-4 text-xs bg-[#ec5b13] hover:bg-[#ec5b13]/80 text-white py-1 px-3 rounded-md uppercase tracking-wider transition-colors z-51">
+                                        Access Source Code
+                                    </a>
+                                )}
                             </div>
 
                             {/* Canvas Cover */}

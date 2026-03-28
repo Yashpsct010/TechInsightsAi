@@ -49,3 +49,15 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
+
+  # This job runs to generate the daily "Tech Hack" Intel bite
+  generate-intel:
+    needs: warm-up
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Intel Generation
+        run: |
+          echo "Generating Daily Tech Hack Intel..."
+          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/intel/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"

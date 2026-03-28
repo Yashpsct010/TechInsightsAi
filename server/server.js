@@ -64,6 +64,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", blogRoutes);
 app.use("/api/jobs", require("./routes/jobRoutes"));
 app.use("/api/newsletter", require("./routes/newsletterRoutes"));
+app.use("/api/intel", require("./routes/intelRoutes"));
 
 // Health check route - simplified
 app.get("/health", (req, res) => res.json({ status: "ok" }));

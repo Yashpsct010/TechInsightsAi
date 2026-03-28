@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const User = require('../models/User');
 const Blog = require('../models/Blog');
+const Intel = require('../models/Intel');
 const { sendNewsletter } = require('../services/newsletterService');
 
 const dispatchNewsletter = async () => {
@@ -22,12 +23,15 @@ const dispatchNewsletter = async () => {
                 return;
             }
 
+            // Grab the freshest Intel item to feature in the newsletter
+            const latestIntel = await Intel.findOne().sort({ createdAt: -1 });
+
             let successCount = 0;
             let failCount = 0;
 
             // Transmit to each subscriber
             for (const user of subscribers) {
-                const sent = await sendNewsletter(user, recentBlogs);
+                const sent = await sendNewsletter(user, recentBlogs, latestIntel);
                 if (sent) successCount++;
                 else failCount++;
             }

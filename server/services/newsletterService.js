@@ -24,15 +24,27 @@ transporter.verify(function(error) {
 /**
  * Generates the HTML template for the newsletter
  * @param {Array} blogs - Array of blog objects
+ * @param {Object} latestIntel - Optional intel object for the weekly hack block
  * @returns {String} HTML string
  */
-const generateNewsletterHTML = (blogs) => {
+const generateNewsletterHTML = (blogs, latestIntel = null) => {
     let html = `
     <div style="font-family: 'Courier New', Courier, monospace; background-color: #0a0a0c; color: #f1f5f9; padding: 30px; border: 1px solid #333; border-radius: 8px;">
         <h1 style="color: #ec5b13; text-transform: uppercase;">TechInsights.AI <span style="font-size: 14px; color: #8b5cf6;">// Neural_Feed_Weekly</span></h1>
         <p style="color: #94a3b8; font-size: 14px;">Incoming data packet: Top synthetic intel for the week.</p>
         <hr style="border-color: #333; margin-bottom: 30px;" />
     `;
+
+    // Inject Intel if it exists
+    if (latestIntel && latestIntel.intelHook) {
+        html += `
+        <div style="margin-bottom: 35px; padding: 20px; background-color: #1a1a24; border: 1px solid #8b5cf6; border-radius: 6px;">
+            <h2 style="margin: 0 0 10px 0; font-size: 14px; color: #8b5cf6; text-transform: uppercase; letter-spacing: 2px;">⚡ Weekly Intel / ${latestIntel.topic || 'Hack'}</h2>
+            <p style="margin: 0 0 15px 0; font-size: 15px; color: #e2e8f0; font-weight: bold; line-height: 1.6;">${latestIntel.intelHook}</p>
+            ${latestIntel.referenceUrl ? `<a href="${latestIntel.referenceUrl}" style="color: #8b5cf6; font-size: 12px; text-decoration: underline;">[ACCESS_SOURCE_MATERIAL]</a>` : ''}
+        </div>
+        `;
+    }
 
     blogs.forEach(blog => {
         html += `
@@ -60,14 +72,15 @@ const generateNewsletterHTML = (blogs) => {
  * Sends the newsletter to a specific user
  * @param {Object} user - User object containing email
  * @param {Array} blogs - Array of blogs to include in the email
+ * @param {Object} latestIntel - Optional daily intel
  */
-const sendNewsletter = async (user, blogs) => {
+const sendNewsletter = async (user, blogs, latestIntel = null) => {
     try {
         const mailOptions = {
             from: `"TechInsights.AI System" <${process.env.EMAIL_USER}>`,
             to: user.email,
-            subject: 'System Alert: Weekly Tech Intel Dispatched // TechInsights.AI',
-            html: generateNewsletterHTML(blogs),
+            subject: 'System Alert: Tech Intel Dispatched // TechInsights.AI',
+            html: generateNewsletterHTML(blogs, latestIntel),
         };
 
         const info = await transporter.sendMail(mailOptions);
