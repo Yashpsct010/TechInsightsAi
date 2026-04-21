@@ -101,7 +101,10 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        // IMPORTANT: Keep this false in production builds.
+        // enabled:true causes the SW to intercept HMR requests in dev,
+        // which breaks hot reload and can serve stale cached responses.
+        enabled: false,
         type: "module",
         navigateFallback: "index.html",
       },

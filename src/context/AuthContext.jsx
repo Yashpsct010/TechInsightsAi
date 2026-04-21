@@ -91,7 +91,10 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const userData = await authService.register(email, password);
-            setUser(userData);
+            setUser({
+                ...userData,
+                bookmarks: userData.bookmarks || [] // normalize same as login
+            });
             return true;
         } catch (err) {
             setError(err.message);

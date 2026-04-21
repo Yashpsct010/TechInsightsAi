@@ -2,12 +2,16 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 // Helper to get auth header
 const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user && user.token) {
-    return { Authorization: `Bearer ${user.token}` };
-  } else {
-    return {};
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.token) {
+      return { Authorization: `Bearer ${user.token}` };
+    }
+  } catch {
+    // localStorage value is corrupt — clear it and proceed unauthenticated
+    localStorage.removeItem("user");
   }
+  return {};
 };
 
 // Custom Error Classes
