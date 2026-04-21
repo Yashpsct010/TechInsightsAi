@@ -10,50 +10,126 @@ const getAuthHeader = () => {
   }
 };
 
+// Custom Error Classes
+export class NetworkError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NetworkError';
+    this.isRetryable = true;
+  }
+}
+
+export class AuthError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = 'AuthError';
+    this.statusCode = statusCode;
+    this.isRetryable = false;
+  }
+}
+
+// Retry Wrapper for Transient Network Errors
+const withRetries = async (fn, maxRetries = 3, backoff = 1000) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      
+      // Only retry on retryable errors
+      if (!error.isRetryable) {
+        throw error;
+      }
+
+      if (attempt < maxRetries) {
+        const wait = backoff * Math.pow(2, attempt - 1);
+        console.log(`Attempt ${attempt} failed, retrying in ${wait}ms...`);
+        await new Promise(r => setTimeout(r, wait));
+      }
+    }
+  }
+  throw lastError;
+};
+
 // Register user
 const register = async (email, password) => {
-  const response = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
+  return withRetries(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new AuthError(data.message || "Error registering", response.status);
+      }
+
+      if (data.token) {
+        localStorage.setItem("user", JSON.stringify(data));
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new NetworkError(`Network error: ${error.message}`);
+      }
+      if (error.name === 'AbortError') {
+        throw new NetworkError('Request timeout');
+      }
+      throw error;
+    }
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Error registering");
-  }
-
-  if (data.token) {
-    localStorage.setItem("user", JSON.stringify(data));
-  }
-
-  return data;
 };
 
 // Login user
 const login = async (email, password) => {
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
+  return withRetries(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new AuthError(data.message || "Error logging in", response.status);
+      }
+
+      if (data.token) {
+        localStorage.setItem("user", JSON.stringify(data));
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new NetworkError(`Network error: ${error.message}`);
+      }
+      if (error.name === 'AbortError') {
+        throw new NetworkError('Request timeout');
+      }
+      throw error;
+    }
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Error logging in");
-  }
-
-  if (data.token) {
-    localStorage.setItem("user", JSON.stringify(data));
-  }
-
-  return data;
 };
 
 // Logout user
@@ -62,12 +138,13 @@ const logout = () => {
 };
 
 // Get user profile
-const getProfile = async () => {
+const getProfile = async (options = {}) => {
   const response = await fetch(`${API_URL}/auth/profile`, {
     method: "GET",
     headers: {
       ...getAuthHeader(),
     },
+    ...options, // Allow passing AbortSignals
   });
 
   const data = await response.json();

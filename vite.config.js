@@ -53,23 +53,30 @@ export default defineConfig({
             },
           },
           {
-            // Cache your API responses
-            urlPattern: /^https?:\/\/.*\/api\/blogs.*/i,
-            handler: "StaleWhileRevalidate",
+            // Cache latest/all blog fetching
+            urlPattern: /^https?:\/\/.*\/api\/blogs(\?.*|\/(all|latest).*)$/i,
+            handler: "NetworkFirst",
             options: {
               cacheName: "blog-api-cache",
+              networkTimeoutSeconds: 3, // If network takes >3s, use cache
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 2, // 2 hours freshness
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
-              backgroundSync: {
-                name: "blog-queue",
-                options: {
-                  maxRetentionTime: 24 * 60, // Retry for max of 24 hours (specified in minutes)
-                },
+            },
+          },
+          {
+            // Individual blog by ID
+            urlPattern: /^https?:\/\/.*\/api\/blogs\/[a-f0-9]+$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "blog-detail-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
               },
             },
           },

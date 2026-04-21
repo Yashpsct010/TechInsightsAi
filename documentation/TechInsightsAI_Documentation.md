@@ -25,6 +25,7 @@ The platform offers users the latest insights on technology trends, coding tips,
 **Key Objectives:**
 
 - Deliver AI-generated tech content that is informative and engaging
+- Maintain a cohesive and modern brutalist/terminal/orange theme across all components
 - Provide a responsive, accessible user interface
 - Enable offline access to content
 - Implement efficient caching strategies for performance
@@ -555,6 +556,10 @@ export async function fetchBlogContent() {
 }
 ```
 
+### External Data Integration (Medium)
+
+In addition to Gemini-generated content, the platform integrates with Medium's data feeds to ensure content remains current and aligned with trending topics. This is handled via dedicated synchronization services that fetch and parse the latest technology-focused posts.
+
 ### Internal API Structure
 
 The application's internal API follows RESTful principles:
@@ -569,8 +574,8 @@ The application's internal API follows RESTful principles:
 | `/api/auth/register`       | POST   | Register a new user                           | `name`, `email`, `password`             |
 | `/api/auth/login`          | POST   | Authenticate and login                        | `email`, `password`                     |
 | `/api/auth/profile`        | GET    | Get user profile                              | Bearer Token                            |
-| `/api/jobs/extract-skills` | POST   | Parse resume to extract skills (Rate-Limited) | `resume` (File)                         |
-| `/api/jobs/search`         | GET    | Search for tech jobs via JSearch API          | `query`                                 |
+| `/api/jobs/extract-skills` | POST   | Parse resume to extract skills (Admin only)   | `resume` (File)                         |
+| `/api/jobs/search`         | GET    | Search for tech jobs (Admin only)             | `query`                                 |
 
 ---
 
@@ -708,9 +713,11 @@ The application provides feedback to users about their online/offline status:
 
 ### 4. Performance Optimizations
 
-- Efficient caching strategies
-- Lazy-loading of components
-- Optimized database queries
+- Efficient caching strategies (StaleWhileRevalidate)
+- APIMonitor: Intelligent frontend retry mechanism with exponential backoff for enhanced API resilience
+- Lazy-loading of components and images
+- Optimized database queries and indexing
+- Payload optimization (excluding heavy content from list views)
 - Code splitting
 
 ### 5. Enhanced User Experience
@@ -783,6 +790,8 @@ The application provides feedback to users about their online/offline status:
 
 ### Resume Parsing & Job Match Workflow
 
+*(Note: The jobs section is currently unavailable to normal users and only accessible to admins as it doesn't fit well with our core blog website use case and theme).*
+
 ```
 ┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
 │               │     │               │     │               │     │               │
@@ -842,14 +851,15 @@ The application follows a serverless deployment model:
 ### Frontend Deployment
 
 - Hosted on Vercel
-- Optimized for CDN delivery
-- Automated deployments from GitHub
+### Frontend & Read-API Deployment
 
-### Backend Deployment
+- **Vercel**: Hosts the React frontend and serverless "read" APIs to eliminate cold-start issues and ensure instant global content delivery.
+- **Payload Optimization**: Excludes heavy blog bodies from list views to minimize data transfer to the edge.
 
-- Serverless functions on Vercel
-- Optimized for cold starts
-- Connection pooling for database access
+### Backend & Generation Hosting
+
+- **Render**: Hosts the persistent Node.js environment for resource-intensive AI generation and scheduled cron tasks.
+- **Cold Start Elimination**: Users interact mainly with the Vercel-hosted content, while Render handles the heavy lifting in the background.
 
 ### Database Hosting
 

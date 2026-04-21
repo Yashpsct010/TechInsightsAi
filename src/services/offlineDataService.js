@@ -61,7 +61,63 @@ export const initializeDB = () => {
 };
 
 /**
+ * Check browser storage quota
+ */
+export const checkStorageQuota = async () => {
+  if (navigator.storage && navigator.storage.estimate) {
+    const estimate = await navigator.storage.estimate();
+    const percentUsed = (estimate.usage / estimate.quota) * 100;
+    console.log(`Storage: ${percentUsed.toFixed(2)}% used (${(estimate.usage / 1024 / 1024).toFixed(2)}MB of ${(estimate.quota / 1024 / 1024).toFixed(2)}MB)`);
+    return { percentUsed, estimate };
+  }
+  return null;
+};
+
+/**
+ * Cleanup blogs older than maxAgeMs to free up IndexedDB space.
+ * Default is 30 days.
+ */
+export const cleanupOldBlogs = async (maxAgeMs = 30 * 24 * 60 * 60 * 1000) => {
+  try {
+    if (!db) await initializeDB();
+
+    const allBlogs = await getAllBlogs();
+    const now = Date.now();
+    const cutoffDate = now - maxAgeMs;
+
+    const blogsToDelete = allBlogs.filter(blog => {
+      const blogDate = new Date(blog.createdAt).getTime();
+      return blogDate < cutoffDate;
+    });
+
+    if (blogsToDelete.length === 0) return 0;
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([BLOGS_STORE], "readwrite");
+      const store = transaction.objectStore(BLOGS_STORE);
+
+      blogsToDelete.forEach(blog => {
+        store.delete(blog._id);
+      });
+
+      transaction.oncomplete = () => {
+        console.log(`Cleaned up ${blogsToDelete.length} old blogs`);
+        resolve(blogsToDelete.length);
+      };
+
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+    });
+  } catch (error) {
+    console.error("Cleanup failed:", error);
+    return 0;
+  }
+};
+
+/**
  * Save blog data to IndexedDB
+
  * @param {Object} blog - Blog data to store
  */
 export const saveBlog = async (blog) => {
@@ -71,7 +127,7 @@ export const saveBlog = async (blog) => {
       await initializeDB();
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const transaction = db.transaction([BLOGS_STORE], "readwrite");
       const store = transaction.objectStore(BLOGS_STORE);
       const request = store.put(blog);
@@ -81,13 +137,40 @@ export const saveBlog = async (blog) => {
         resolve(true);
       };
 
-      request.onerror = (event) => {
-        console.error("Error saving blog:", event.target.error);
-        reject(event.target.error);
+      request.onerror = async (event) => {
+        const error = event.target.error;
+        
+        // Handle quota exceeded specifically
+        if (error.name === "QuotaExceededError") {
+          console.warn("IndexedDB quota exceeded. Attempting cleanup...");
+          try {
+            const cleaned = await cleanupOldBlogs();
+            if (cleaned > 0) {
+              // Retry after cleanup with a NEW transaction because the old one is inactive after `await`
+              console.log("Retrying save after cleanup");
+              const retryTx = db.transaction([BLOGS_STORE], "readwrite");
+              const retryStore = retryTx.objectStore(BLOGS_STORE);
+              const retryRequest = retryStore.put(blog);
+              retryRequest.onsuccess = () => resolve(true);
+              retryRequest.onerror = () => reject(new Error("QuotaExceededError: Unable to save even after cleanup"));
+            } else {
+              reject(new Error("QuotaExceededError: No old blogs to clean, quota is full"));
+            }
+          } catch (cleanupError) {
+            reject(new Error(`QuotaExceededError: Cleanup failed - ${cleanupError.message}`));
+          }
+        } else {
+          console.error("Error saving blog:", error);
+          reject(error);
+        }
       };
     });
   } catch (error) {
     console.error("Failed to save blog:", error);
+    if (error.message && error.message.includes("QuotaExceededError")) {
+      console.error("User storage quota exceeded. Old blogs will be deleted.");
+    }
+    // It's a best practice to return false rather than breaking the application for a caching failure
     return false;
   }
 };

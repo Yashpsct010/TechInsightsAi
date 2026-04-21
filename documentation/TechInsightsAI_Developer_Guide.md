@@ -39,6 +39,9 @@ Tech enthusiasts and professionals who want quick, high-quality insights on:
 - Coding tips and tricks
 - Emerging technologies
 
+**Design Philosophy:**
+The application features a modern brutalist/terminal-inspired orange theme that provides a cohesive and unique reading experience for developers.
+
 **Why we built it this way:**
 We went with a React frontend and Express backend because this separation gives us:
 
@@ -51,6 +54,8 @@ We went with a React frontend and Express backend because this separation gives 
 - Optimizing MongoDB for serverless environments (Vercel has limitations)
 - Fine-tuning Gemini prompts for consistent, high-quality content
 - Implementing reliable offline functionality (service workers can be tricky!)
+
+> ⚠️ **Note on Job Features**: The jobs section (involving JSearch API and resume parsing) is currently unavailable to normal users and restricted to admin access only, as it doesn't fit well with our core blog website use case and theme.
 
 Let me know if you have specific questions about the project goals - I'm happy to elaborate!
 
@@ -125,7 +130,11 @@ src/
 │   ├── About.jsx        # About page component
 │   ├── PWAInstallPrompt.jsx # PWA installation UI
 │   └── OfflineNotice.jsx # Connection status notification
+├── hooks/               # Reusable custom hooks
+│   ├── useLatestBlog.js # Fetches and manages the most recent post
+│   └── useBlogById.js   # Fetches and manages a specific post by ID
 ├── services/            # Service integrations
+│   ├── blogService.js   # API client for blog operations (includes APIMonitor)
 │   ├── offlineDataService.js # IndexedDB management
 │   └── components/services/geminiApi.js # AI API client
 ├── App.jsx              # Main application component
@@ -168,6 +177,8 @@ function App() {
   );
 }
 ```
+
+> 💡 **Recent Refactor**: We moved complex data-fetching logic out of `Blog.jsx` and `BlogsPage.jsx` into custom hooks like `useLatestBlog`. This keeps our UI components clean and focused on rendering.
 
 > 📝 **Note**: The `<AnimatePresence>` component from Framer Motion enables page transition animations. The `mode="wait"` prop makes sure the exiting component finishes its animation before the entering component starts.
 
@@ -262,14 +273,14 @@ server/
 ├── controllers/         # Request handlers
 │   ├── blogController.js # Blog-related operations
 │   ├── authController.js # Handle user login and registration logic
-│   └── jobController.js  # Handle job search and resume parsing
+│   └── jobController.js  # Handle job search and resume parsing (Admin only)
 ├── models/              # Data models
 │   ├── Blog.js          # Blog schema definition
 │   └── User.js          # User schema and pass-hash definition
 ├── routes/              # API routes
 │   ├── blogRoutes.js    # Blog endpoint definitions
 │   ├── authRoutes.js    # Authentication endpoint definitions
-│   └── jobRoutes.js     # Job board endpoint definitions
+│   └── jobRoutes.js     # Job board endpoint definitions (Admin only)
 ├── middleware/          # Express middlewares
 │   └── authMiddleware.js # Route protection and JWT validation
 ├── utils/               # Utility functions
@@ -610,6 +621,9 @@ async function callWithRetry(apiCall, maxRetries = 3) {
 
 > 💡 **Pro Tip**: Exponential backoff is crucial for external API calls. It prevents hammering the service when it's having issues.
 
+#### APIMonitor
+We use a utility called `APIMonitor` within our frontend services. It automatically wraps API calls with retry logic, handling network flickers and temporary server timeouts gracefully without manual error handling in every component.
+
 ### Rate Limiting Considerations
 
 The Gemini API has rate limits we need to respect:
@@ -922,7 +936,16 @@ Here are some common issues you might encounter and how to debug them:
 
 ## Deployment Process
 
-We deploy the app using Vercel for both frontend and backend:
+We use a hybrid deployment orchestration to balance user experience with compute intensive requirements:
+
+### Frontend & Read-API Deployment (Vercel)
+The frontend and read-heavy API routes are deployed as serverless functions on Vercel. This ensures minimal latency for users and eliminates cold starts for fetching existing blog content.
+
+### Backend & AI Generation (Render)
+Resource-intensive tasks, such as Gemini AI content generation and scheduled cron jobs, are hosted on Render to provide a persistent compute environment.
+
+### GitHub Actions (CI/CD)
+CI/CD workflows are optimized to run tasks in parallel, drastically reducing the time required for automated blog generation and deployment.
 
 ### Frontend Deployment
 
