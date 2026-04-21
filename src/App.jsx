@@ -11,7 +11,6 @@ import BlogDetailPage from './components/BlogDetailPage';
 import Jobs from './components/Jobs';
 import Login from './components/Login';
 import Register from './components/Register';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
 import OfflineNotice from './components/OfflineNotice';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './components/Profile';
@@ -22,6 +21,10 @@ import { AuthProvider } from './context/AuthContext';
 
 function App() {
   useEffect(() => {
+    // Clean up stale localStorage keys left by old PWAInstallPrompt component
+    localStorage.removeItem('pwa-install-dismissed');
+    localStorage.removeItem('pwa-install-dismissed-timestamp');
+
     // Initialize the offline database when the app loads
     const initStorage = async () => {
       try {
@@ -81,7 +84,6 @@ function App() {
               </AnimatePresence>
             </main>
             <Footer />
-            <PWAInstallPrompt />
           </div>
         </Router>
       </AuthProvider>

@@ -62,9 +62,13 @@ const Footer = () => {
                                     TechInsights<span className="text-[#ec5b13]">.AI</span>
                                 </h2>
                             </Link>
-                            <p className="text-slate-500 max-w-sm mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed">
+                            <p className="text-slate-500 max-w-sm mb-6 text-sm sm:text-base leading-relaxed">
                                 Decentralized artificial intelligence insights for the year {new Date().getFullYear()} and beyond. Synthesized for precision, curated for human intelligence.
                             </p>
+                            <div className="bg-[#121212] border border-white/5 p-4 rounded-xl max-w-sm mb-6 sm:mb-8 text-xs sm:text-sm text-slate-400 font-mono shadow-md">
+                                <span className="block text-white mb-1 uppercase tracking-widest text-[10px]"><FaTerminal className="inline mr-1 mb-0.5 text-[#ec5b13]"/> System_Install</span>
+                                To install as a native app: Tap <strong className="text-[#ec5b13] font-normal">Share → Add to Home Screen</strong> (iOS), or use your browser menu <strong className="text-[#ec5b13] font-normal">Install App</strong> (Android/Desktop).
+                            </div>
                             <div className="flex gap-3 sm:gap-4">
                                 {socialLinks.map((social, idx) => (
                                     <motion.a
