@@ -4,6 +4,7 @@ const axios = require("axios");
 const Parser = require("rss-parser");
 
 const parser = new Parser({
+  timeout: 10000, // 10 seconds timeout to prevent hanging feeds
   customFields: {
     item: ["description", "content:encoded", "pubDate"],
   },
@@ -272,7 +273,26 @@ async function getAiGeneratedContent(genre = null) {
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 4096,
+      responseMimeType: "application/json",
     },
+    safetySettings: [
+      {
+        category: "HARM_CATEGORY_HARASSMENT",
+        threshold: "BLOCK_NONE",
+      },
+      {
+        category: "HARM_CATEGORY_HATE_SPEECH",
+        threshold: "BLOCK_NONE",
+      },
+      {
+        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        threshold: "BLOCK_NONE",
+      },
+      {
+        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+        threshold: "BLOCK_NONE",
+      },
+    ],
   };
 
   // We are extracting the base URL from the env, or assuming a default structure
@@ -287,7 +307,7 @@ async function getAiGeneratedContent(genre = null) {
         requestBody,
         {
           headers: { "Content-Type": "application/json" },
-          timeout: 25000,
+          timeout: 45000, // Increased to 45s for longer generations
         },
       );
     },
@@ -295,30 +315,47 @@ async function getAiGeneratedContent(genre = null) {
     2000,
   );
 
-  const textResponse = response.data.candidates[0].content.parts[0].text;
-  console.log("Raw response received from Gemini API");
-
-  const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error(
-      "Failed to parse JSON from response:",
-      textResponse.substring(0, 500) + "...",
-    );
-    throw new Error("Failed to parse content from API response");
+  const candidates = response.data.candidates;
+  if (!candidates || candidates.length === 0) {
+    throw new Error("Gemini API returned no candidates. Possible quota or safety issue.");
   }
 
+  const candidate = candidates[0];
+  if (candidate.finishReason && candidate.finishReason !== "STOP") {
+    console.warn(`Gemini API generation stopped with reason: ${candidate.finishReason}`);
+  }
+
+  if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+    throw new Error(`Gemini API returned no content. Finish reason: ${candidate.finishReason}`);
+  }
+
+  const textResponse = candidate.content.parts[0].text;
+  console.log("Raw response received from Gemini API");
+
+  let content;
   try {
-    const content = JSON.parse(jsonMatch[0]);
-    console.log("Successfully parsed JSON content");
+    content = JSON.parse(textResponse);
+    console.log("Successfully parsed JSON content directly");
     return content;
   } catch (jsonError) {
-    console.error(
-      "JSON parsing error:",
-      jsonError,
-      "Raw match:",
-      jsonMatch[0].substring(0, 500) + "...",
-    );
-    throw new Error("Failed to parse JSON content: " + jsonError.message);
+    // Fallback to regex matching if there are markdown blocks
+    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error(
+        "Failed to parse JSON from response:",
+        textResponse.substring(0, 500) + "...",
+      );
+      throw new Error("Failed to parse content from API response");
+    }
+    
+    try {
+      content = JSON.parse(jsonMatch[0]);
+      console.log("Successfully parsed JSON content via regex fallback");
+      return content;
+    } catch (fallbackError) {
+      console.error("JSON parsing error:", fallbackError);
+      throw new Error("Failed to parse JSON content: " + fallbackError.message);
+    }
   }
 }
 
