@@ -296,19 +296,22 @@ async function getAiGeneratedContent(genre = null) {
   };
 
   // We are extracting the base URL from the env, or assuming a default structure
-  // Explicitly enforcing the gemini-2.5-flash-lite model to avoid quota limits
+  // Explicitly enforcing the gemini-3.1-flash-lite model to avoid quota limits
   const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
-  const modelToUse = "gemini-2.5-flash-lite";
+  const modelToUse = "gemini-3.1-flash-lite";
 
   const response = await withRetries(
     async () => {
       return await axios.post(
         `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
         requestBody,
-        {
-          headers: { "Content-Type": "application/json" },
-          timeout: 45000, // Increased to 45s for longer generations
-        },
+          {
+            headers: { 
+              "Content-Type": "application/json",
+              "Referer": "https://techinsightsai.vercel.app"
+            },
+            timeout: 45000, // Increased to 45s for longer generations
+          },
       );
     },
     3,

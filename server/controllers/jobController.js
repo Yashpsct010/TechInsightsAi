@@ -71,7 +71,7 @@ async function getSkillsFromGemini(resumeText) {
   };
 
   const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
-  const modelToUse = "gemini-2.5-flash-lite";
+  const modelToUse = "gemini-3.1-flash-lite";
 
   const response = await withRetries(
     async () => {
@@ -79,7 +79,10 @@ async function getSkillsFromGemini(resumeText) {
         `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
         requestBody,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Referer": "https://techinsightsai.vercel.app"
+          },
           timeout: 15000,
         },
       );

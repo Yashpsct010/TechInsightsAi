@@ -25,9 +25,12 @@ exports.protect = async (req, res, next) => {
       }
 
       // Decode token to get user ID
+      if (!process.env.JWT_SECRET) {
+        throw new Error("FATAL ERROR: JWT_SECRET environment variable is not defined.");
+      }
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || "default_fallback_secret",
+        process.env.JWT_SECRET,
       );
 
       // Fetch user from DB and attach to req object (minus password)
