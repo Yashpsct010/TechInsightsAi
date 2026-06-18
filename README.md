@@ -91,7 +91,6 @@ Create a `.env` file in the `server` directory based on `.env.example` and fill 
 
 ```
 MONGODB_URI=your_mongodb_connection_string
-GEMINI_API_URL=your_gemini_api_url
 GEMINI_API_KEY=your_gemini_api_key
 UNSPLASH_ACCESS_KEY=your_unsplash_access_key
 CRON_SECRET=a_secret_key_for_cron_job_authorization

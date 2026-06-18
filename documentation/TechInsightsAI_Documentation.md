@@ -903,7 +903,6 @@ VITE_API_BASE_URL=your_backend_url
 # Backend (.env)
 MONGODB_URI=your_mongodb_connection_string
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
 PORT=5000
 NODE_ENV=production
 CRON_SECRET=your_cron_secret
