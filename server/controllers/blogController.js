@@ -3,6 +3,13 @@ const Blog = require("../models/Blog");
 const axios = require("axios");
 const Parser = require("rss-parser");
 
+class SafetyError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "SafetyError";
+  }
+}
+
 const parser = new Parser({
   timeout: 10000, // 10 seconds timeout to prevent hanging feeds
   customFields: {
@@ -213,15 +220,55 @@ async function fetchRecentNews(genre) {
 /**
  * Fetches AI-generated blog content from the Gemini API.
  * @param {string | null} genre - The specific genre to request from the AI.
+ * @param {boolean} useFallback - Whether to use the safer, context-free fallback prompt.
  * @returns {Promise<object>} The parsed JSON content from the AI response.
  */
-async function getAiGeneratedContent(genre = null) {
+async function getAiGeneratedContent(genre = null, useFallback = false) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
 
-  // 1. Fetch real-world advancements context
-  const newsContext = await fetchRecentNews(genre);
+  // 1. Fetch real-world advancements context if not in fallback mode
+  const newsContext = useFallback ? "" : await fetchRecentNews(genre);
 
-  const prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about current trending tech topics. 
+  let prompt = "";
+  if (useFallback) {
+    prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about current trending tech topics. 
+        ${genre ? `Focus specifically on ${genre}. ` : ""}
+        You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable.
+        
+        CRITICAL INSTRUCTION: Ensure the content is strictly informative, educational, and safe. Do not include any harmful, illicit, or sensitive content. Focus on positive technological advancements.
+
+        Blog Focus Areas:
+        Your article should include:
+        - Tech Tips & Best Practices
+        - Latest Software & Feature Releases
+        - AI & Machine Learning Advances
+        - Emerging Technologies (Quantum, Blockchain, etc.)
+        - Digital Security Best Practices
+            
+        The article should be comprehensive (around 800-1000 words) and include:
+        1. An engaging title
+        2. An introduction to the topic
+        3. Key points and analysis
+        4. Industry implications
+        5. Future outlook
+        6. A conclusion
+        
+        Also include:
+        - A suggestion for an image that could accompany this article (describe it in detail).
+        
+        Format your response as JSON with the following structure:
+        {
+          "title": "The blog post title",
+          "body": "The full HTML formatted blog post content with proper h2, h3, p, ul, li tags, etc.",
+          "image": "detailed description for an image to use",
+          "imageAlt": "Alt text for the image",
+          "imageCaption": "A brief caption for the image",
+          "links": []
+        }
+        
+        Focus on providing valuable insights and accurate information. EXACTLY follow the JSON structure.`;
+  } else {
+    prompt = `You are a technology blog writer. Create a detailed and informative tech blog post about current trending tech topics. 
         ${genre ? `Focus specifically on ${genre}. ` : ""}
         You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging blog post covering the latest in technology. The content should be fresh, well-researched, and valuable.
 
@@ -267,6 +314,7 @@ async function getAiGeneratedContent(genre = null) {
         }
         
         Focus on providing valuable insights and accurate information. EXACTLY follow the JSON structure.`;
+  }
 
   const requestBody = {
     contents: [{ parts: [{ text: prompt }] }],
@@ -320,16 +368,19 @@ async function getAiGeneratedContent(genre = null) {
 
   const candidates = response.data.candidates;
   if (!candidates || candidates.length === 0) {
-    throw new Error("Gemini API returned no candidates. Possible quota or safety issue.");
+    throw new SafetyError("Gemini API returned no candidates. Possible quota or safety issue.");
   }
 
   const candidate = candidates[0];
   if (candidate.finishReason && candidate.finishReason !== "STOP") {
     console.warn(`Gemini API generation stopped with reason: ${candidate.finishReason}`);
+    if (["SAFETY", "BLOCK", "PROHIBITED_CONTENT", "SPII", "RECITATION"].includes(candidate.finishReason)) {
+      throw new SafetyError(`Gemini API blocked content generation due to safety settings. Reason: ${candidate.finishReason}`);
+    }
   }
 
   if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-    throw new Error(`Gemini API returned no content. Finish reason: ${candidate.finishReason}`);
+    throw new SafetyError(`Gemini API returned no content. Finish reason: ${candidate.finishReason}`);
   }
 
   const textResponse = candidate.content.parts[0].text;
@@ -425,8 +476,19 @@ async function getImageForBlog(title) {
  */
 async function generateNewBlog(genre = null) {
   try {
+    let content;
     // Step 1: Get AI-generated content
-    const content = await getAiGeneratedContent(genre);
+    try {
+      content = await getAiGeneratedContent(genre, false);
+    } catch (error) {
+      if (error.name === "SafetyError") {
+        console.warn(`[SafetyError] Initial generation blocked for genre "${genre}". Retrying with safer fallback mode...`);
+        // Retry with safer prompt and no RSS context
+        content = await getAiGeneratedContent(genre, true);
+      } else {
+        throw error;
+      }
+    }
 
     // Step 2: Get an image for the blog
     const imageUrl = await getImageForBlog(content.title);
