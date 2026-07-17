@@ -388,23 +388,58 @@ async function getAiGeneratedContent(genre = null, useFallback = false) {
 
   let content;
   try {
-    content = JSON.parse(textResponse);
+    // First, try direct parse or cleaning markdown code blocks
+    const cleanedText = textResponse.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    content = JSON.parse(cleanedText);
     console.log("Successfully parsed JSON content directly");
     return content;
   } catch (jsonError) {
-    // Fallback to regex matching if there are markdown blocks
-    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // Helper function to extract balanced JSON object { ... } accurately without greedy matching
+    function extractBalancedJson(text) {
+      const start = text.indexOf('{');
+      if (start === -1) return null;
+      let balance = 0;
+      let inString = false;
+      let escape = false;
+      for (let i = start; i < text.length; i++) {
+        const char = text[i];
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (char === '\\') {
+          escape = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (!inString) {
+          if (char === '{') balance++;
+          else if (char === '}') {
+            balance--;
+            if (balance === 0) {
+              return text.substring(start, i + 1);
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    const balancedJson = extractBalancedJson(textResponse);
+    if (!balancedJson) {
       console.error(
-        "Failed to parse JSON from response:",
+        "Failed to find balanced JSON from response:",
         textResponse.substring(0, 500) + "...",
       );
       throw new Error("Failed to parse content from API response");
     }
     
     try {
-      content = JSON.parse(jsonMatch[0]);
-      console.log("Successfully parsed JSON content via regex fallback");
+      content = JSON.parse(balancedJson);
+      console.log("Successfully parsed JSON content via balanced extractor");
       return content;
     } catch (fallbackError) {
       console.error("JSON parsing error:", fallbackError);
@@ -481,13 +516,9 @@ async function generateNewBlog(genre = null) {
     try {
       content = await getAiGeneratedContent(genre, false);
     } catch (error) {
-      if (error.name === "SafetyError") {
-        console.warn(`[SafetyError] Initial generation blocked for genre "${genre}". Retrying with safer fallback mode...`);
-        // Retry with safer prompt and no RSS context
-        content = await getAiGeneratedContent(genre, true);
-      } else {
-        throw error;
-      }
+      console.warn(`[Fallback Triggered] Initial generation failed for genre "${genre}" (${error.name}: ${error.message}). Retrying in fallback mode without RSS context...`);
+      // Retry with safer prompt and no RSS context
+      content = await getAiGeneratedContent(genre, true);
     }
 
     // Step 2: Get an image for the blog
