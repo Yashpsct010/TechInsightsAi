@@ -13,7 +13,7 @@ jobs:
       - name: Basic Health Check
         run: |
           echo "Performing basic health check to warm up the server..."
-          curl --fail -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check failed, but continuing to trigger generation jobs."
+          curl --fail-with-body -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check failed, but continuing to trigger generation jobs."
 
   # This job runs in parallel for each genre after the warm-up is complete
   generate-blog:
@@ -45,7 +45,7 @@ jobs:
           echo "Generating blog for genre: ${{ matrix.genre }}"
 
           # Send the API request to trigger blog generation
-          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
+          curl --fail-with-body --show-error -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
@@ -58,6 +58,6 @@ jobs:
       - name: Trigger Daily Intel Generation
         run: |
           echo "Generating Daily Tech Hack Intel..."
-          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/intel/generate" \
+          curl --fail-with-body --show-error -s -X POST "https://techinsightsai.onrender.com/api/intel/generate" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
