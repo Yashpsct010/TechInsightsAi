@@ -1,139 +1,118 @@
-# TechInsightsAI
+# TechInsightsAI (v2.0)
 
-## AI-Powered Tech Blog with PWA and Automated Content Generation
+> **Autonomous AI-driven intelligence platform with Next.js 15 App Router, Turborepo monorepo, and decoupled GitHub Actions background workers.**
 
-TechInsightsAI is a modern, full-stack web application that leverages Artificial Intelligence to automatically generate and publish engaging blog posts on trending technology topics. Designed as a Progressive Web App (PWA), it offers a seamless user experience with offline capabilities and push notifications, ensuring users stay updated even without an internet connection.
+TechInsightsAI is an enterprise-grade blogging and technical intelligence platform. It features autonomous content synthesis powered by the Gemini API, real-time RSS tech news grounding, modern cyber-terminal neo-brutalist styling, offline capability via Promise-based IndexedDB, and serverless edge-ready architecture.
 
-The project features a robust backend that orchestrates content generation and serves a RESTful API, complemented by a dynamic React frontend for an intuitive user interface.
+---
 
-## Features
+## ⚡ Architecture Highlights (v2.0)
 
-- **AI-Powered Content Generation:** Automatically generates detailed blog posts on various tech topics (AI/ML, Cybersecurity, Coding, etc.) using the Gemini API.
-- **Automated Publishing:** Scheduled GitHub Actions workflow (in production) or local Node cron job triggers new blog post generation every day at midnight.
-- **User Authentication:** Secure user registration, login, and profile management using JWT.
-- **Job Board & Resume Parsing:** Search for tech jobs directly through the platform and upload your resume for automatic skill extraction and tailored job matching.
-- **Progressive Web App (PWA):** Installable on devices, offering an app-like experience with offline support and push notifications.
-- **Offline Data Access:** Blogs are cached using IndexedDB, allowing users to view content even when offline.
-- **Dynamic Blog Archive:** Browse all blog posts with server-side pagination, genre filtering, date filtering, and search functionality.
-- **Responsive Design:** Optimized for various screen sizes using Tailwind CSS.
-- **Robust API Handling:** Enhanced API service with retry mechanisms and exponential backoff using `APIMonitor` for improved resilience.
-- **User-Friendly Interface:** Built with React and `framer-motion` for smooth animations and transitions.
+- **Next.js 15 App Router (`apps/web`):** Replaces the legacy Vite SPA. Provides Static Site Generation (SSG), Server-Side Rendering (SSR), edge-ready API routes (`/api/*`), instant zero-TTFB initial loads, and automated SEO schema.
+- **Turborepo Monorepo:** Clean separation of concerns between web interface, background autonomous workers, and shared database abstractions.
+- **Decoupled AI Worker (`apps/ai-worker`):** Standalone Node.js service and CLI scripts solely responsible for Gemini AI generation, RSS ingestion, and weekly newsletter dispatching.
+- **Shared Database Core (`packages/database`):** Strongly-typed Mongoose connection pooling with serverless singleton cache, shared across all workspaces.
+- **Serverless Background Cron via GitHub Actions:** Zero-cost background scheduling ($0.00/mo) using native Ubuntu GitHub Actions runners to execute generation scripts on a schedule without needing dedicated 24/7 background servers.
+- **Modern Data & Storage Layer:** TanStack Query (React Query) for in-memory caching and request deduplication; `idb` for Promise-based offline blog reading.
 
-## Technology Stack
+---
 
-### Frontend
+## 📁 Repository Structure
 
-- **Framework:** React.js
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS
-- **Animations:** Framer Motion
-- **Routing:** React Router DOM
-- **PWA:** `vite-plugin-pwa`
-- **Offline Storage:** IndexedDB (via `offlineDataService`)
+```
+TechInsightsAi/
+├── .github/
+│   └── workflows/
+│       ├── generate-blog.yml        # Daily midnight blog & tech hack generation
+│       └── generate-newsletter.yml  # Weekly Friday newsletter dispatch
+├── apps/
+│   ├── web/                         # Next.js 15 App Router frontend & API routes
+│   └── ai-worker/                   # Gemini AI generation & RSS ingestion engine
+├── packages/
+│   ├── database/                    # Shared Mongoose models & connection pool
+│   └── tsconfig/                    # Shared TypeScript configurations
+├── AGENTS.md                        # Architectural specification & agent guidelines
+├── turbo.json                       # Turborepo task pipeline
+└── package.json                     # Monorepo workspaces definition
+```
 
-### Backend
+---
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** MongoDB (via Mongoose ODM)
-- **API Integration:** Axios (for external API calls like Gemini, Unsplash)
-- **Environment Variables:** `dotenv`
-
-### DevOps & Deployment
-
-- **Frontend Deployment:** Vercel
-- **Backend Deployment:** Render
-- **CI/CD:** GitHub Actions (for automated blog generation)
-
-## Key Improvements & Refactorings
-
-During recent development cycles, the following significant improvements and refactorings have been implemented:
-
-- **Backend Database Optimization:** Refactored database connection logic for serverless environments, ensuring efficient connection reuse and retry mechanisms.
-- **Cleaned Backend API:** Consolidated API routing and controller logic, moving inline route handlers to dedicated controller functions for better separation of concerns.
-- **Optimized Database Indexing:** Enhanced MongoDB schema with optimized indexes for faster query performance, especially for fetching latest and filtered blog posts.
-- **Efficient CI/CD Workflow:** Re-architected the GitHub Actions workflow for automated blog generation to run tasks in parallel, drastically reducing execution time and improving efficiency.
-- **Frontend Filtering Fix:** Migrated date and search term filtering from inefficient client-side processing to robust server-side API handling, ensuring accurate results and improved performance for the blog archive.
-- **Component Logic Extraction:** Extracted complex data-fetching and state-management logic from `Blog.jsx` and `BlogDetailPage.jsx` into reusable custom hooks (`useLatestBlog`, `useBlogById`), making components cleaner and more focused on UI.
-- **Enhanced API Resilience:** Integrated `APIMonitor` into the frontend `blogService` to provide intelligent retry mechanisms with exponential backoff, making API calls more robust against transient failures.
-- **PWA Notification Integration:** Implemented push notification subscription logic into the PWA's main entry point, enabling users to receive updates.
-- **Codebase Cleanup:** Removed several redundant and unused files from the frontend, streamlining the project and reducing unnecessary code.
-
-## Setup & Installation
-
-To get a copy of the project up and running on your local machine for development and testing purposes, follow these steps.
+## 🚀 Quickstart & Local Development
 
 ### Prerequisites
+- Node.js >= 20.0.0
+- npm >= 10.0.0
+- MongoDB connection string (local or MongoDB Atlas)
+- Gemini API Key (from [Google AI Studio](https://aistudio.google.com/))
+- Unsplash Access Key (optional, for article hero photos)
 
-- Node.js (v18 or higher recommended)
-- npm or Yarn
-- MongoDB instance (local or cloud-hosted)
-- Gemini API Key
-- Unsplash API Key (for image generation)
-
-### 1. Clone the repository
-
+### 1. Installation
+Clone the repository and install all workspace dependencies from the root:
 ```bash
-git clone https://github.com/your-username/TechInsightsAi.git
+git clone https://github.com/Yashpsct010/TechInsightsAi.git
 cd TechInsightsAi
-```
-
-### 2. Backend Setup
-
-Navigate to the `server` directory and install dependencies:
-
-```bash
-cd server
 npm install
 ```
 
-Create a `.env` file in the `server` directory based on `.env.example` and fill in your details:
-
-```
-MONGODB_URI=your_mongodb_connection_string
-GEMINI_API_KEY=your_gemini_api_key
-UNSPLASH_ACCESS_KEY=your_unsplash_access_key
-CRON_SECRET=a_secret_key_for_cron_job_authorization
-```
-
-Start the backend server:
-
+### 2. Environment Setup
+Copy the example environment file and configure your credentials:
 ```bash
-npm start
+cp .env.example .env
 ```
+Fill in your `MONGODB_URI`, `GEMINI_API_KEY`, `JWT_SECRET`, and `NEXT_PUBLIC_APP_URL`.
 
-The backend will run on `http://localhost:5000` by default.
-
-### 3. Frontend Setup
-
-Navigate back to the root directory and then into the frontend `src` directory:
-
-```bash
-cd ..
-npm install
-```
-
-Create a `.env` file in the root directory based on `.env.example` and fill in your details:
-
-```
-VITE_API_BASE_URL=http://localhost:5000/api
-```
-
-Start the frontend development server:
-
+### 3. Run Development Servers
+Start both the Next.js web application and worker pipelines concurrently:
 ```bash
 npm run dev
 ```
+The web application will be live at `http://localhost:3000`.
 
-The frontend will typically run on `http://localhost:5173`.
+### 4. Build & Typecheck
+Verify builds and TypeScript across all workspaces:
+```bash
+# Typecheck all packages
+npm run check-types
 
-## Usage
+# Production build all packages
+npm run build
+```
 
-- Open your browser to the frontend URL (e.g., `http://localhost:5173`).
-- Explore the "Latest Blog" for the most recent AI-generated article.
-- Visit "All Blogs" to browse the archive, using the search, genre, and date filters.
-- Install the PWA to experience offline capabilities and receive notifications (ensure `VAPID_PUBLIC_KEY` is configured in `notificationService.js` and backend).
+---
 
-## License
+## 🛠️ CLI Automation Scripts
+
+You can manually trigger autonomous generation scripts at any time:
+
+```bash
+# Generate a new blog post (auto genre or specified genre)
+npm run generate:blog --workspace=@techinsights/ai-worker -- --genre=coding
+
+# Generate today's tech hack intel bite
+npm run generate:intel --workspace=@techinsights/ai-worker -- --force
+
+# Dispatch newsletter to active subscribers
+npm run send:newsletter --workspace=@techinsights/ai-worker
+```
+
+---
+
+## 🌐 Production Deployment
+
+- **Web Application (`apps/web`):** Deployed on [Vercel](https://vercel.com) using the Next.js preset with root directory set to `apps/web`.
+- **Background Cron Workflows:** Executed autonomously via GitHub Actions on scheduled cron triggers with repository secrets configured.
+- **Database:** MongoDB Atlas M0 (Free Tier).
+
+---
+
+## 📜 Historical Releases
+
+- **[Release v1.0.0](https://github.com/Yashpsct010/TechInsightsAi/releases/tag/v1.0.0):** Vite SPA + Express Hybrid Backend (Archived on `legacy-v1` branch).
+- **[Release v2.0.0](https://github.com/Yashpsct010/TechInsightsAi/releases/tag/v2.0.0):** Turborepo Monorepo + Next.js 15 App Router + Decoupled GitHub Actions Workers.
+
+---
+
+## 📄 License
 
 This project is licensed under the MIT License.
