@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import blogService from '../services/blogService';
 import { useAuth } from '../context/AuthContext';
 import NewsletterPopup from './NewsletterPopup';
+import { ReadingProgressHUD } from './ReadingProgressHUD';
 import { formatDate, calculateReadingTime } from '../utils/formatters';
 
 export const Blog = () => {
@@ -24,6 +26,8 @@ export const Blog = () => {
   const [imageError, setImageError] = useState(false);
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
   const { user, toggleBookmark } = useAuth();
+  const router = useRouter();
+  const articleRef = useRef<HTMLElement>(null);
 
   const {
     data: blog,
@@ -185,7 +189,7 @@ export const Blog = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
             >
               {/* Main Article */}
-              <article className="lg:col-span-8">
+              <article ref={articleRef} className="lg:col-span-8">
                 {/* Protocol Tags */}
                 <motion.div
                   className="flex flex-wrap items-center gap-2 sm:gap-3 font-mono text-xs text-[#06b6d4] uppercase tracking-widest mb-4 sm:mb-6"
@@ -442,6 +446,27 @@ export const Blog = () => {
                 </div>
               </aside>
             </motion.div>
+          )}
+
+          {blog && !loading && !error && (
+            <ReadingProgressHUD
+              targetRef={articleRef}
+              totalReadingTime={readingTime}
+              blogId={blog._id}
+              blogTitle={blog.title}
+              isBookmarked={!!isBookmarked}
+              onBookmarkToggle={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!user) {
+                  router.push('/login');
+                  return;
+                }
+                if (blog?._id) {
+                  await toggleBookmark(blog._id);
+                }
+              }}
+            />
           )}
         </AnimatePresence>
       </div>

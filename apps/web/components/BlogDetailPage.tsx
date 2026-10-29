@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -17,6 +17,7 @@ import {
 import { formatDate } from '../utils/formatters';
 import { useBlogById } from '../hooks/useBlogById';
 import { useAuth } from '../context/AuthContext';
+import { ReadingProgressHUD } from './ReadingProgressHUD';
 
 export const BlogDetailPage = () => {
   const params = useParams();
@@ -25,6 +26,7 @@ export const BlogDetailPage = () => {
   const { blog, loading, error } = useBlogById(id);
   const { user, toggleBookmark } = useAuth();
   const [imageError, setImageError] = useState(false);
+  const articleRef = useRef<HTMLElement>(null);
 
   const handleBackClick = () => {
     router.push('/blogs');
@@ -101,14 +103,15 @@ export const BlogDetailPage = () => {
             </motion.button>
           </div>
         ) : blog ? (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
-          >
+          <>
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
+            >
             {/* Main Article */}
-            <article className="lg:col-span-8">
+            <article ref={articleRef} className="lg:col-span-8">
               {/* Protocol Tags */}
               <motion.div
                 className="flex flex-wrap items-center gap-2 sm:gap-3 font-mono text-xs text-[#06b6d4] uppercase tracking-widest mb-4 sm:mb-6"
@@ -394,7 +397,17 @@ export const BlogDetailPage = () => {
               </div>
             </aside>
           </motion.div>
-        ) : (
+
+          <ReadingProgressHUD
+            targetRef={articleRef}
+            totalReadingTime={readingTime}
+            blogId={blog._id}
+            blogTitle={blog.title}
+            isBookmarked={isBookmarked}
+            onBookmarkToggle={handleBookmark}
+          />
+        </>
+      ) : (
           <div className="text-center py-16 sm:py-24">
             <h3 className="text-xl sm:text-2xl font-black mb-3 text-white uppercase tracking-tighter">
               Node_Not_Found
