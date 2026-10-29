@@ -17,7 +17,7 @@ import {
 import { formatDate } from '../utils/formatters';
 import { useBlogById } from '../hooks/useBlogById';
 import { useAuth } from '../context/AuthContext';
-import { ReadingProgressHUD } from './ReadingProgressHUD';
+import { CircuitReadingStreak } from './CircuitReadingStreak';
 
 export const BlogDetailPage = () => {
   const params = useParams();
@@ -26,7 +26,7 @@ export const BlogDetailPage = () => {
   const { blog, loading, error } = useBlogById(id);
   const { user, toggleBookmark } = useAuth();
   const [imageError, setImageError] = useState(false);
-  const articleRef = useRef<HTMLElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
 
   const handleBackClick = () => {
     router.push('/blogs');
@@ -111,7 +111,7 @@ export const BlogDetailPage = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
             >
             {/* Main Article */}
-            <article ref={articleRef} className="lg:col-span-8">
+            <article className="lg:col-span-8">
               {/* Protocol Tags */}
               <motion.div
                 className="flex flex-wrap items-center gap-2 sm:gap-3 font-mono text-xs text-[#06b6d4] uppercase tracking-widest mb-4 sm:mb-6"
@@ -196,14 +196,17 @@ export const BlogDetailPage = () => {
                 </motion.div>
               )}
 
-              {/* Article Body */}
-              <motion.div
-                className="blog-content article-content text-slate-300 text-base sm:text-lg leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: blog.body }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              />
+              {/* Article Body with Circuit Reading Streak */}
+              <div ref={contentWrapperRef} className="relative pl-7 sm:pl-10 md:pl-12">
+                <CircuitReadingStreak containerRef={contentWrapperRef} />
+                <motion.div
+                  className="blog-content article-content text-slate-300 text-base sm:text-lg leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: blog.body }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                />
+              </div>
 
               {/* Related Resources */}
               {blog.links && blog.links.length > 0 && (
@@ -398,14 +401,6 @@ export const BlogDetailPage = () => {
             </aside>
           </motion.div>
 
-          <ReadingProgressHUD
-            targetRef={articleRef}
-            totalReadingTime={readingTime}
-            blogId={blog._id}
-            blogTitle={blog.title}
-            isBookmarked={isBookmarked}
-            onBookmarkToggle={handleBookmark}
-          />
         </>
       ) : (
           <div className="text-center py-16 sm:py-24">

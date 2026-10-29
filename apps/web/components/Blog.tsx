@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import blogService from '../services/blogService';
 import { useAuth } from '../context/AuthContext';
 import NewsletterPopup from './NewsletterPopup';
-import { ReadingProgressHUD } from './ReadingProgressHUD';
+import { CircuitReadingStreak } from './CircuitReadingStreak';
 import { formatDate, calculateReadingTime } from '../utils/formatters';
 
 export const Blog = () => {
@@ -27,7 +27,7 @@ export const Blog = () => {
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
   const { user, toggleBookmark } = useAuth();
   const router = useRouter();
-  const articleRef = useRef<HTMLElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
 
   const {
     data: blog,
@@ -189,7 +189,7 @@ export const Blog = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
             >
               {/* Main Article */}
-              <article ref={articleRef} className="lg:col-span-8">
+              <article className="lg:col-span-8">
                 {/* Protocol Tags */}
                 <motion.div
                   className="flex flex-wrap items-center gap-2 sm:gap-3 font-mono text-xs text-[#06b6d4] uppercase tracking-widest mb-4 sm:mb-6"
@@ -285,14 +285,17 @@ export const Blog = () => {
                   </motion.div>
                 )}
 
-                {/* Article Body */}
-                <motion.div
-                  className="blog-content article-content text-slate-300 text-base sm:text-lg leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: blog.body }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                />
+                {/* Article Body with Circuit Reading Streak */}
+                <div ref={contentWrapperRef} className="relative pl-7 sm:pl-10 md:pl-12">
+                  <CircuitReadingStreak containerRef={contentWrapperRef} />
+                  <motion.div
+                    className="blog-content article-content text-slate-300 text-base sm:text-lg leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: blog.body }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  />
+                </div>
 
                 {/* Share Section */}
                 <motion.div
@@ -448,26 +451,6 @@ export const Blog = () => {
             </motion.div>
           )}
 
-          {blog && !loading && !error && (
-            <ReadingProgressHUD
-              targetRef={articleRef}
-              totalReadingTime={readingTime}
-              blogId={blog._id}
-              blogTitle={blog.title}
-              isBookmarked={!!isBookmarked}
-              onBookmarkToggle={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!user) {
-                  router.push('/login');
-                  return;
-                }
-                if (blog?._id) {
-                  await toggleBookmark(blog._id);
-                }
-              }}
-            />
-          )}
         </AnimatePresence>
       </div>
 
