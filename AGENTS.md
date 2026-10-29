@@ -51,6 +51,7 @@ techinsightsai_v2/
 | **Stage 3** | **Data Layer, Auth & Core Pages** | **COMPLETED** | Native API routes (`app/api/*`), Blog Feed (`/blog`), Archive (`/blogs`), Reading View (`/blog/[id]`), Auth (`/login`, `/register`), Bookmarks (`/bookmarks`), Profile (`/profile`), About (`/about`), Admin Jobs (`/jobs`), and Promise-based IndexedDB (`idb`). |
 | **Stage 4** | **Decoupled AI Worker** | **COMPLETED** | Standalone background Node.js service, Gemini AI blog generator, RSS/news ingestion, daily intel cron, and newsletter automation (`apps/ai-worker`). |
 | **Stage 5** | **SEO, PWA & Production Polish** | **COMPLETED** | Dynamic XML sitemap (`/sitemap.xml`), `robots.txt`, JSON-LD schema (`WebSite`, `Organization`, `TechArticle`), PWA manifest, and full Turborepo monorepo verification. |
+| **Stage 6** | **Production Rollout & Cloud Consolidation** | **COMPLETED** | Migration from 3-tier hybrid to unified Next.js 15 Vercel edge + GitHub Actions serverless cron. Render decommissioned ($0.00/mo cost), repository promoted to root monorepo, and official release `v2.0.0` live. |
 
 ### Stage 1 Execution Summary
 - **Workspace Architecture**: Configured root `package.json` with npm workspaces (`apps/*`, `packages/*`) and `turbo.json` caching build pipelines.
