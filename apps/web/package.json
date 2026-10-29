@@ -1,0 +1,37 @@
+{
+  "name": "@techinsights/web",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.67.1",
+    "@techinsights/database": "*",
+    "axios": "^1.7.9",
+    "bcryptjs": "^3.0.3",
+    "framer-motion": "^12.5.0",
+    "idb": "^8.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.14",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.14",
+    "typescript": "^5.8.2"
+  }
+}

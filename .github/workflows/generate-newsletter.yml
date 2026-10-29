@@ -3,21 +3,32 @@ name: Dispatch Weekly Newsletter
 on:
   schedule:
     - cron: "0 17 * * 5" # Run every Friday at 17:00 UTC
-  workflow_dispatch: # Allow manual triggering for testing and off-schedule drops
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  dispatch-newsletter:
+  send-newsletter:
+    name: Dispatch Newsletter to Active Subscribers
     runs-on: ubuntu-latest
     steps:
-      - name: Basic Server Wakeup
-        run: |
-          echo "Pinging health endpoint to warm up serverless instances..."
-          curl --fail -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check timeout, continuing..."
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Trigger Newsletter Dispatch
-        run: |
-          echo "Dispatching Weekly Newsletter..."
-          
-          # Send the API request to trigger newsletter delivery
-          curl --fail --show-error -s -X POST "https://techinsightsai.onrender.com/api/newsletter/dispatch" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build Database Core
+        run: npm run build --workspace=@techinsights/database
+
+      - name: Transmit Newsletter Sequence
+        run: npm run send:newsletter --workspace=@techinsights/ai-worker
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          CLIENT_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}

@@ -1,63 +1,65 @@
-name: Generate Blog Content
+name: Generate Autonomous Content
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Run every day at midnight UTC
-  workflow_dispatch: # Allow manual triggering for testing
+    - cron: "0 0 * * *" # Run daily at midnight UTC
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  # This job runs first to "wake up" the serverless backend
-  warm-up:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Basic Health Check
-        run: |
-          echo "Performing basic health check to warm up the server..."
-          curl --fail-with-body -s -m 15 "https://techinsightsai.onrender.com/health" || echo "Health check failed, but continuing to trigger generation jobs."
-
-  # This job runs in parallel for each genre after the warm-up is complete
-  generate-blog:
-    needs: warm-up # Ensures the warm-up job runs first
+  generate-blogs:
+    name: Generate Blog (${{ matrix.genre }})
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false # Ensures all jobs run even if one fails
+      fail-fast: false
       max-parallel: 1
       matrix:
-        # Defines the list of genres to generate
-        genre:
-          [
-            "general",
-            "ai-ml",
-            "cybersecurity",
-            "coding",
-            "emerging-tech",
-            "tech-news",
-          ]
+        genre: ["coding", "ai-ml", "cybersecurity", "emerging-tech", "tech-news"]
     steps:
-      - name: Trigger Blog Generation for ${{ matrix.genre }}
-        run: |
-          # Prepare the JSON payload. It's empty for 'general' and contains the genre for others.
-          JSON_PAYLOAD="{}"
-          if [ "${{ matrix.genre }}" != "general" ]; then
-            JSON_PAYLOAD=$(printf '{"genre":"%s"}' "${{ matrix.genre }}")
-          fi
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-          echo "Generating blog for genre: ${{ matrix.genre }}"
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
 
-          # Send the API request to trigger blog generation
-          curl --fail-with-body --show-error -s -X POST "https://techinsightsai.onrender.com/api/blogs/generate" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD"
+      - name: Install Monorepo Dependencies
+        run: npm ci
 
-  # This job runs to generate the daily "Tech Hack" Intel bite
+      - name: Build Database Core
+        run: npm run build --workspace=@techinsights/database
+
+      - name: Run Autonomous Blog Generator
+        run: npm run generate:blog --workspace=@techinsights/ai-worker -- --genre=${{ matrix.genre }}
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          CLIENT_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
   generate-intel:
-    needs: warm-up
+    name: Generate Daily Tech Intel
+    needs: generate-blogs
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Daily Intel Generation
-        run: |
-          echo "Generating Daily Tech Hack Intel..."
-          curl --fail-with-body --show-error -s -X POST "https://techinsightsai.onrender.com/api/intel/generate" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json"
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build Database Core
+        run: npm run build --workspace=@techinsights/database
+
+      - name: Run Daily Intel Generator
+        run: npm run generate:intel --workspace=@techinsights/ai-worker -- --force
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

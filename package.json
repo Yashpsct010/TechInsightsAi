@@ -1,38 +1,23 @@
 {
-  "name": "TechInsightsAi",
+  "name": "techinsightsai-v2",
+  "version": "2.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "TechInsightsAI v2 Monorepo (Next.js App Router + Turborepo + AI Worker)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.0.14",
-    "axios": "^1.13.6",
-    "framer-motion": "^12.5.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0",
-    "react-router-dom": "^7.3.0"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "baseline-browser-mapping": "^2.10.0",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "jsdom": "^29.1.1",
-    "vite": "^6.2.0",
-    "vite-plugin-pwa": "^1.0.0",
-    "vitest": "^4.1.6"
-  }
+    "turbo": "^2.4.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.8.2"
 }

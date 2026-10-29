@@ -1,0 +1,30 @@
+{
+  "name": "@techinsights/ai-worker",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "generate:blog": "tsx src/scripts/generateBlog.ts",
+    "generate:intel": "tsx src/scripts/generateIntel.ts",
+    "send:newsletter": "tsx src/scripts/sendNewsletter.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@techinsights/database": "*",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

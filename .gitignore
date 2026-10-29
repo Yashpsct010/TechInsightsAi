@@ -1,26 +1,41 @@
-# Logs
-logs
-*.log
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+dist/
+out/
+build/
+*.tsbuildinfo
+
+
+# Turborepo
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS Files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.env
+Thumbs.db
+
+# IDE & Editor
+.vscode/
+.idea/
+
+# Internal summaries
 project_summary.md
+
