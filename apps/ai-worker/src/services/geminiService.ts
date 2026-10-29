@@ -187,7 +187,7 @@ Format your response purely as JSON:
   };
 
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-  const modelToUse = 'gemini-1.5-flash';
+  const modelToUse = 'gemini-3.1-flash-lite';
 
   const response = await withRetries(
     async () => {
@@ -270,7 +270,7 @@ CRITICAL RULES:
   };
 
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-  const modelToUse = 'gemini-1.5-flash';
+  const modelToUse = 'gemini-3.1-flash-lite';
 
   const response = await withRetries(
     async () => {

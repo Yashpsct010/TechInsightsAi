@@ -71,7 +71,7 @@ CRITICAL INSTRUCTIONS:
     };
 
     const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    const modelToUse = 'gemini-1.5-flash';
+    const modelToUse = 'gemini-3.1-flash-lite';
 
     const response = await axios.post(
       `${baseUrl}/${modelToUse}:generateContent?key=${geminiApiKey}`,
