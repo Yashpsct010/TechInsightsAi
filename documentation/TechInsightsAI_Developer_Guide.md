@@ -1,1004 +1,270 @@
-# TechInsightsAI - Developer Knowledge Transfer Guide
+# TechInsightsAI (v2.0) - Developer Knowledge Transfer Guide
 
-Hey there! If you're reading this, you're probably new to the TechInsightsAI project. I've put together this guide to help you understand how everything works and get you up to speed quickly. I'll try to explain not just what we've built, but why we made certain decisions along the way.
+Hey there! If you're onboarding to the **TechInsightsAI v2.0** codebase, welcome. This guide is designed to walk you through the architecture, explain why specific design decisions were made, and give you the practical workflows needed to contribute effectively.
+
+---
 
 ## What You'll Find in This Guide
 
-1. [Project Overview](#project-overview) - What we're building and why
-2. [System Architecture](#system-architecture) - The big picture
-3. [Frontend Deep Dive](#frontend-deep-dive) - React, components, and how it all works
-4. [Backend Breakdown](#backend-breakdown) - Express, APIs, and server-side logic
-5. [Database Insights](#database-insights) - MongoDB, schemas, and data management
-6. [API Integration Patterns](#api-integration-patterns) - Working with Gemini AI and other services
-7. [Offline Capabilities](#offline-capabilities) - PWA features and how they work
-8. [Development Workflow](#development-workflow) - How to work with this codebase
-9. [Debugging Guide](#debugging-guide) - Common issues and how to solve them
-10. [Deployment Process](#deployment-process) - Getting code to production
-
-Let's dive in!
+1. [Project Overview & Philosophy](#1-project-overview--philosophy)
+2. [Monorepo Architecture & Workspaces](#2-monorepo-architecture--workspaces)
+3. [Frontend Deep Dive (`apps/web`)](#3-frontend-deep-dive-appsweb)
+4. [Backend & API Architecture (`app/api/*`)](#4-backend--api-architecture-appapi)
+5. [Autonomous AI Worker (`apps/ai-worker`)](#5-autonomous-ai-worker-appsai-worker)
+6. [Shared Database Package (`packages/database`)](#6-shared-database-package-packagesdatabase)
+7. [Offline Capabilities & IndexedDB (`idb`)](#7-offline-capabilities--indexeddb-idb)
+8. [Local Development & CLI Workflows](#8-local-development--cli-workflows)
+9. [Debugging & Troubleshooting Guide](#9-debugging--troubleshooting-guide)
+10. [Deployment & Production Runbook](#10-deployment--production-runbook)
 
 ---
 
-## Project Overview
+## 1. Project Overview & Philosophy
 
-TechInsightsAI is an AI-powered tech blog that automatically generates content using Google's Gemini API. Here's what makes this project cool:
+**TechInsightsAI** is an autonomous tech blogging and intelligence platform. It tracks trending technology developments, synthesizes technical articles using Google's Gemini LLM, and publishes them with zero human intervention.
 
-**What sets it apart:**
-
-- Content is AI-generated but feels human-written thanks to our prompt engineering
-- Works offline through PWA features (huge UX win)
-- Responsive design that looks great on any device
-- Performance optimized with smart caching strategies
-
-**Who is this for?**
-Tech enthusiasts and professionals who want quick, high-quality insights on:
-
-- Latest tech news
-- AI/ML trends
-- Cybersecurity updates
-- Coding tips and tricks
-- Emerging technologies
-
-**Design Philosophy:**
-The application features a modern brutalist/terminal-inspired orange theme that provides a cohesive and unique reading experience for developers.
-
-**Why we built it this way:**
-We went with a React frontend and Express backend because this separation gives us:
-
-1. Better code organization (frontend team can work independently)
-2. Scalability (the backend can serve multiple clients - web, potential mobile app, etc.)
-3. Clear API contract between frontend and backend
-
-**Biggest technical challenges:**
-
-- Optimizing MongoDB for serverless environments (Vercel has limitations)
-- Fine-tuning Gemini prompts for consistent, high-quality content
-- Implementing reliable offline functionality (service workers can be tricky!)
-
-> ⚠️ **Note on Job Features**: The jobs section (involving JSearch API and resume parsing) is currently unavailable to normal users and restricted to admin access only, as it doesn't fit well with our core blog website use case and theme.
-
-Let me know if you have specific questions about the project goals - I'm happy to elaborate!
+### Core Design Principles
+- **Separation of Read and Write Workloads:** User reads run on Vercel's global edge network via Next.js 15 serverless handlers; heavy AI background generation runs on decoupled GitHub Actions runners. User traffic never contends with slow LLM generation.
+- **Strict Anti-Hallucination Grounding:** We never prompt an LLM to generate news from its frozen weights. Real-time RSS feeds (TechCrunch, MIT News, Wired, Hacker News) provide factual 48-hour context and mandatory canonical URLs.
+- **Instant Load Times (Zero TTFB):** Pre-rendered server-side routes deliver content immediately to both users and search crawlers.
+- **Offline First:** Any opened blog article is automatically cached in Promise-based IndexedDB for uninterrupted offline reading.
+- **Cyber-Terminal Neo-Brutalist Aesthetic:** Monospace typography, high-contrast orange (`#ec5b13`) on obsidian (`#0a0a0c`), glass panels, and interactive HTML5 scratch-canvas daily intel decryptor.
 
 ---
 
-## System Architecture
+## 2. Monorepo Architecture & Workspaces
 
-Here's how all the pieces fit together. I've found diagrams super helpful for understanding the big picture:
+The repository is organized as a **Turborepo monorepo** using npm workspaces:
 
 ```
-┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│                  │      │                  │      │                  │
-│  React Frontend  │<────>│  Express Backend │<────>│  MongoDB Database│
-│                  │      │                  │      │                  │
-└────────┬─────────┘      └────────┬─────────┘      └──────────────────┘
-         │                         │                          ▲
-         │                         │                          │
-         │                         ▼                          │
-┌────────▼─────────┐      ┌──────────────────┐      ┌─────────▼────────┐
-│                  │      │                  │      │                  │
-│  Service Worker  │      │    Gemini AI     │      │  Mongoose ODM    │
-│  (PWA/Caching)   │      │      API         │      │                  │
-│                  │      │                  │      │                  │
-└──────────────────┘      └──────────────────┘      └──────────────────┘
+TechInsightsAi/
+├── apps/
+│   ├── web/                    # Next.js 15 App Router (Frontend + API Routes)
+│   └── ai-worker/              # Decoupled AI generation & cron worker
+├── packages/
+│   ├── database/               # Shared Mongoose models & connection pool
+│   └── tsconfig/               # Shared TypeScript configurations
+├── .github/workflows/          # Serverless background cron workflows
+├── turbo.json                  # Turborepo task pipeline
+└── package.json                # Root workspace configuration
 ```
 
-### Key Components Explained
-
-#### Frontend (React)
-
-This is a React SPA built with Vite, which gives us faster builds than Create React App. A few things to note:
-
-- **Component Structure**: We follow a functional component approach with hooks. No class components here!
-- **State Management**: We're using React's built-in hooks for state - useState and useEffect. We decided against Redux because the app's state requirements aren't complex enough to justify it.
-- **Routing**: React Router v6 handles routing. The main routes are defined in App.jsx.
-- **PWA Features**: We use Workbox (via Vite PWA plugin) to handle service worker generation. This gives us offline capabilities with minimal configuration.
-
-> 💡 **Pro Tip**: When working on the frontend, use React DevTools to inspect component hierarchy and state changes. It'll save you hours of debugging time!
-
-#### Backend (Express)
-
-We're running an Express.js server with a pretty standard structure:
-
-1. Schema flexibility - perfect for content that might evolve over time
-2. Great integration with Node.js via Mongoose
-3. MongoDB Atlas has a generous free tier that works well for our needs
-
-> ⚠️ **Gotcha**: In serverless environments, handling MongoDB connections can be tricky. Always check if there's an existing connection before creating a new one. See our `db.js` utility for how we handle this.
-
-#### External Services
-
-- **Gemini AI API**: This is where the magic happens. We send prompts to generate blog content.
-- **Unsplash API**: We use this for blog images.
+### Why Turborepo?
+- **Zero Code Duplication:** Both `apps/web` and `apps/ai-worker` import database models directly from `@techinsights/database`.
+- **Topological Task Scheduling:** Turborepo builds `packages/database` *before* building dependent applications (`dependsOn: ["^build"]`).
+- **Computation Caching:** Build artifacts are cached. If a package has not changed, Turborepo replays the build in milliseconds.
 
 ---
 
-## Frontend Deep Dive
-
-Let's dig deeper into how the frontend works:
-
-### Component Structure
-
-```
-src/
-├── components/          # UI components
-│   ├── Header.jsx       # Navigation header
-│   ├── Footer.jsx       # Site footer with links
-│   ├── Home.jsx         # Landing page component
-│   ├── Blog.jsx         # Blog display component
-│   ├── BlogsPage.jsx    # Blog listing page
-│   ├── BlogDetailPage.jsx # Individual blog view
-│   ├── About.jsx        # About page component
-│   ├── PWAInstallPrompt.jsx # PWA installation UI
-│   └── OfflineNotice.jsx # Connection status notification
-├── hooks/               # Reusable custom hooks
-│   ├── useLatestBlog.js # Fetches and manages the most recent post
-│   └── useBlogById.js   # Fetches and manages a specific post by ID
-├── services/            # Service integrations
-│   ├── blogService.js   # API client for blog operations (includes APIMonitor)
-│   ├── offlineDataService.js # IndexedDB management
-│   └── components/services/geminiApi.js # AI API client
-├── App.jsx              # Main application component
-└── main.jsx             # Application entry point
-```
-
-Here's a breakdown of the key components:
-
-#### App.jsx
-
-This is our main component that sets up the routing structure. Take a look:
-
-```jsx
-function App() {
-  useEffect(() => {
-    // Initialize the offline database when the app loads
-    initializeDB().catch(console.error);
-  }, []);
-
-  return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <OfflineNotice />
-        <Header />
-        <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blogs" element={<BlogsPage />} />
-              <Route path="/blog/:id" element={<BlogDetailPage />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-        <Footer />
-        <PWAInstallPrompt />
-      </div>
-    </Router>
-  );
-}
-```
-
-> 💡 **Recent Refactor**: We moved complex data-fetching logic out of `Blog.jsx` and `BlogsPage.jsx` into custom hooks like `useLatestBlog`. This keeps our UI components clean and focused on rendering.
-
-> 📝 **Note**: The `<AnimatePresence>` component from Framer Motion enables page transition animations. The `mode="wait"` prop makes sure the exiting component finishes its animation before the entering component starts.
-
-### State Management Patterns
-
-We use several state management patterns throughout the app:
-
-1. **Component State**: For UI state that doesn't need to be shared
-
-   ```jsx
-   const [isLoading, setIsLoading] = useState(false);
-   ```
-
-2. **Lifting State Up**: When child components need to share state
-
-   ```jsx
-   // Parent component
-   const [selectedBlog, setSelectedBlog] = useState(null);
-
-   // Pass to children
-   <BlogList blogs={blogs} onSelectBlog={setSelectedBlog} />
-   <BlogDetail blog={selectedBlog} />
-   ```
-
-3. **Context API**: For theme and global user preferences
-   ```jsx
-   // We use context sparingly, only for truly global state
-   const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
-   ```
-
-> 💡 **Pro Tip**: Before reaching for a third-party state management library, consider if React's built-in tools (useState, useReducer, useContext) can solve your problem. They often can!
-
-### Offline Data Management
-
-One of our biggest challenges was making the app work offline. Here's how we handle it:
-
-1. **Service Worker**: Registers in `main.jsx` and caches static assets and API responses
-2. **IndexedDB**: Stores blog data for offline access
-
-```js
-// In offlineDataService.js
-export const saveBlog = async (blog) => {
-  try {
-    // Only initialize if db doesn't exist (optimized path)
-    if (!db) {
-      await initializeDB();
-    }
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([BLOGS_STORE], "readwrite");
-      const store = transaction.objectStore(BLOGS_STORE);
-      const request = store.put(blog);
-
-      request.onsuccess = () => {
-        console.log("Blog saved to offline storage:", blog._id || blog.title);
-        resolve(true);
-      };
-
-      request.onerror = (event) => {
-        console.error("Error saving blog:", event.target.error);
-        reject(event.target.error);
-      };
-    });
-  } catch (error) {
-    console.error("Failed to save blog:", error);
-    return false;
-  }
-};
-```
-
-> ⚠️ **Gotcha**: IndexedDB operations are asynchronous but don't return promises natively. We wrap them in promises for easier use with async/await.
-
-### Performance Optimizations
-
-Here are some key optimizations we've implemented:
-
-1. **Code Splitting**: Each route is loaded on demand
-2. **Image Optimization**: Images are lazy-loaded and properly sized
-3. **Memoization**: React.memo and useMemo for expensive computations
-4. **Bundle Analysis**: We regularly check bundle size to prevent bloat
-
----
-
-## Backend Breakdown
-
-The backend follows a standard Express.js architecture but with some tweaks for serverless environments:
+## 3. Frontend Deep Dive (`apps/web`)
 
 ### Directory Structure
-
 ```
-server/
-├── controllers/         # Request handlers
-│   ├── blogController.js # Blog-related operations
-│   ├── authController.js # Handle user login and registration logic
-│   └── jobController.js  # Handle job search and resume parsing (Admin only)
-├── models/              # Data models
-│   ├── Blog.js          # Blog schema definition
-│   └── User.js          # User schema and pass-hash definition
-├── routes/              # API routes
-│   ├── blogRoutes.js    # Blog endpoint definitions
-│   ├── authRoutes.js    # Authentication endpoint definitions
-│   └── jobRoutes.js     # Job board endpoint definitions (Admin only)
-├── middleware/          # Express middlewares
-│   └── authMiddleware.js # Route protection and JWT validation
-├── utils/               # Utility functions
-│   └── db.js            # Database connection handling
-├── cron/                # Scheduled tasks
-│   └── blogGenerator.js # Automated content generation
-└── server.js            # Entry point for the Express app
+apps/web/
+├── app/                        # Next.js 15 App Router
+│   ├── api/                    # Serverless API routes
+│   ├── blog/                   # Latest blog & reading view (/blog/[id])
+│   ├── blogs/                  # Filterable blog archive (/blogs)
+│   ├── bookmarks/              # Saved articles (/bookmarks)
+│   ├── profile/                # User settings & preferences (/profile)
+│   ├── login/ & register/      # Cyber-terminal authentication views
+│   ├── sitemap.ts & robots.ts  # Dynamic SEO crawlers
+│   ├── globals.css             # Tailwind v4 theme & terminal styles
+│   └── layout.tsx              # Root HTML shell & JSON-LD structured schemas
+├── components/                 # UI components (Header, Footer, WhatsNewCard, etc.)
+├── context/                    # AuthContext (non-blocking optimistic auth)
+├── hooks/                      # Custom hooks (e.g., useBlogById)
+└── services/                   # Data services (apiClient, blogService, offlineDataService)
 ```
 
-### Connection Handling
+### Key Architectural Patterns
 
-In a serverless environment, connection handling is crucial. Here's our approach:
+#### 1. In-Memory Caching with TanStack Query
+Configured in `app/providers.tsx`:
+- `staleTime: 5 minutes`: Cached articles are served instantly without hitting the network on tab switches.
+- `gcTime: 30 minutes`: Garbage collection keeps memory usage lean.
+- Automatic background revalidation ensures data freshness.
 
-```js
-// In db.js
-const mongoose = require("mongoose");
+#### 2. Centralized Axios Client (`services/apiClient.ts`)
+- **Request Interceptor:** Automatically pulls the user's JWT from `localStorage` and attaches `Authorization: Bearer <token>` to outgoing requests.
+- **Response Interceptor:** Traps `401 Unauthorized` responses and dispatches a window event (`auth:unauthorized`), allowing `AuthContext` to clear stale credentials gracefully without hard page reloads.
 
-let cachedPromise = null;
+#### 3. Non-Blocking Optimistic Auth (`context/AuthContext.tsx`)
+- Public pages render immediately on initial load (Zero TTFB).
+- Stored tokens are verified asynchronously in the background. Only protected routes (like `/bookmarks` or `/profile`) conditionally gate access.
 
-const connectToDB = async () => {
-  // If we have a cached promise, we are already connecting or are connected.
-  if (cachedPromise) {
-    return cachedPromise;
-  }
+---
 
-  // Check if we have a live connection.
+## 4. Backend & API Architecture (`app/api/*`)
+
+All backend endpoints run as edge-ready Next.js Serverless Route Handlers in `apps/web/app/api/`:
+
+```
+apps/web/app/api/
+├── auth/
+│   ├── register/route.ts       # POST: Register user & issue JWT
+│   ├── login/route.ts          # POST: Validate password via bcrypt & issue JWT
+│   ├── profile/route.ts        # GET: User profile & bookmarks
+│   ├── preferences/route.ts    # PUT: Update genre preferences & newsletter
+│   └── bookmarks/route.ts      # GET & POST: Bookmark management
+├── blogs/
+│   ├── route.ts                # GET: Paginated archive with genre/search filters
+│   ├── latest/route.ts         # GET: Instant retrieval of latest drop
+│   └── [id]/route.ts           # GET: Single blog retrieval by ObjectId
+├── intel/
+│   └── today/route.ts          # GET: Daily tech hack bite
+└── system-status/
+    └── route.ts                # GET: Live cluster metrics (FLOPs, DB load, DEFCON)
+```
+
+> 💡 **Best Practice:** Always import `connectToDatabase` from `@techinsights/database` at the beginning of every route handler to ensure connection pooling in serverless environments.
+
+---
+
+## 5. Autonomous AI Worker (`apps/ai-worker`)
+
+The AI worker is an isolated Node.js engine responsible for all background intelligence pipelines.
+
+### Key Modules
+- **`src/services/rssService.ts`:** Ingests live tech articles from RSS feeds across genres with a strict 10-second socket timeout.
+- **`src/services/geminiService.ts`:** Communicates with the Gemini API (`gemini-3.1-flash-lite`). Features a custom state-machine extractor (`extractBalancedJson`) that safely strips markdown backticks and handles unescaped characters in generated HTML bodies.
+- **`src/services/imageService.ts`:** Queries Unsplash for high-res editorial photography matching the generated article title.
+- **`src/services/newsletterService.ts`:** Compiles a dark-mode cyberpunk HTML digest and dispatches it to active subscribers via Nodemailer.
+
+### Standalone CLI Execution
+You can run any worker task manually from the root:
+```bash
+# Generate a new coding blog post
+npm run generate:blog --workspace=@techinsights/ai-worker -- --genre=coding
+
+# Generate today's tech hack intel bite
+npm run generate:intel --workspace=@techinsights/ai-worker -- --force
+
+# Send weekly newsletter
+npm run send:newsletter --workspace=@techinsights/ai-worker
+```
+
+---
+
+## 6. Shared Database Package (`packages/database`)
+
+### Serverless Connection Pooling (`src/connection.ts`)
+To prevent connection exhaustion across ephemeral serverless invocations, we use a global promise cache:
+
+```typescript
+let cachedPromise: Promise<typeof mongoose> | null = 
+  (global as any).mongooseConnectionPromise || null;
+
+export async function connectToDatabase(uri?: string): Promise<typeof mongoose> {
+  if (cachedPromise) return cachedPromise;
+  
   if (mongoose.connection.readyState === 1) {
-    console.log("Using existing database connection.");
-    return Promise.resolve();
+    return Promise.resolve(mongoose);
   }
 
-  console.log("Creating new database connection.");
-  const uri = process.env.MONGODB_URI;
+  const mongoUri = uri || process.env.MONGODB_URI;
+  if (!mongoUri) throw new Error("MONGODB_URI is not defined.");
 
-  // Set up a new connection promise
-  cachedPromise = mongoose.connect(uri, {
+  cachedPromise = mongoose.connect(mongoUri, {
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    maxPoolSize: 5,
+    maxPoolSize: 10,
+    minPoolSize: 1,
     retryWrites: true,
     w: "majority",
   });
 
-  try {
-    await cachedPromise;
-    console.log("MongoDB successfully connected.");
-
-    mongoose.connection.on("disconnected", () => {
-      console.log("MongoDB disconnected.");
-      cachedPromise = null;
-    });
-  } catch (error) {
-    cachedPromise = null;
-    console.error("MongoDB connection error:", error.message);
-    throw error;
-  }
-
+  (global as any).mongooseConnectionPromise = cachedPromise;
   return cachedPromise;
-};
-```
-
-> 💡 **Pro Tip**: This pattern prevents multiple serverless functions from creating their own connections simultaneously, which can lead to connection limits being exceeded.
-
-### Error Handling
-
-We use a consistent error handling approach throughout the API:
-
-```js
-// Global error handler middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({
-    error: "Server error occurred",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Internal server error",
-  });
-});
-
-// In route handlers
-try {
-  // Operation code...
-} catch (error) {
-  console.error(`Error in operation: ${error.message}`);
-  res.status(500).json({
-    error: "Operation failed",
-    message: error.message,
-  });
 }
 ```
 
-> ⚠️ **Security Note**: We only return detailed error messages in development to avoid exposing sensitive information in production.
-
-### API Rate Limiting
-
-For protection against abuse, we implement rate limiting:
-
-```js
-const rateLimit = require("express-rate-limit");
-
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Apply to all requests
-app.use("/api/", apiLimiter);
-```
-
-### Blog Generation Logic
-
-The core of our application is the blog generation logic. Here's the simplified flow:
-
-1. Check if we have a recent blog (cache)
-2. If not, generate a new one using Gemini AI
-3. Process and store the result
-4. Return to the client
-
-```js
-// In blogController.js
-exports.getLatestBlog = async (req, res) => {
-  try {
-    const requestedGenre = req.query.genre || null;
-    const query = requestedGenre ? { genre: requestedGenre } : {};
-
-    // Find the most recent blog for the given query
-    const latestBlog = await Blog.findOne(query).sort({ createdAt: -1 }).exec();
-
-    if (!latestBlog) {
-      return res.status(404).json({ error: "No blog posts found." });
-    }
-
-    res.json({ blog: latestBlog });
-  } catch (error) {
-    console.error("Error getting latest blog:", error);
-    res.status(500).json({ error: error.message });
-  }
-};
-/*
-Note: The actual generation logic is handled in a separate generateBlog function
-or via cron jobs/admin requests, keeping the read path fast.
-*/
-```
-
-> 💡 **Pro Tip**: For expensive operations like AI content generation, always implement caching! It saves costs and improves performance dramatically.
+### Models & Index Optimization
+- **`Blog`:** Indexed on `{ genre: 1, createdAt: -1 }`, `{ createdAt: -1 }`, and full-text index on `{ title: "text", body: "text" }`.
+- **`User`:** Includes pre-save bcrypt salt hashing (10 rounds) and instance method `matchPassword(enteredPassword)`.
+- **`Intel`:** Indexed on `{ displayDate: 1 }` for rapid daily lookup.
 
 ---
 
-## Database Insights
+## 7. Offline Capabilities & IndexedDB (`idb`)
 
-We're using MongoDB with Mongoose as our ODM. Here's what you need to know:
+Located in `apps/web/services/offlineDataService.ts`, offline storage uses the Promise-based `idb` library.
 
-### Schema Design
-
-Our primary schema is the Blog model:
-
-```js
-const BlogSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    body: {
-      type: String,
-      required: true,
-    },
-    image: {
-      type: String,
-      required: true,
-    },
-    imageAlt: {
-      type: String,
-      required: true,
-    },
-    imageCaption: {
-      type: String,
-      required: false,
-    },
-    genre: {
-      type: String,
-      required: true,
-      enum: [
-        "tech-news",
-        "ai-ml",
-        "cybersecurity",
-        "coding",
-        "emerging-tech",
-        "general",
-      ],
-      default: "general",
-    },
-    links: [
-      {
-        title: String,
-        url: String,
-        description: String,
-        image: String,
-        imageAlt: String,
-      },
-    ],
-  },
-  { timestamps: true },
-);
-```
-
-> 📝 **Note**: The `timestamps: true` option automatically adds `createdAt` and `updatedAt` fields to each document. Super useful for tracking when things were created/modified!
-
-### Indexing Strategy
-
-We've added indexes to improve query performance:
-
-```js
-// Add after schema definition
-BlogSchema.index({ genre: 1, createdAt: -1 });
-BlogSchema.index({ createdAt: -1 });
-```
-
-> 💡 **Pro Tip**: Always add indexes for fields you frequently query by! In our case, we often query by genre and sort by creation date, so these indexes speed things up significantly.
-
-### Query Optimization
-
-When retrieving blogs, we use pagination to limit the data transferred:
-
-```js
-const blogs = await Blog.find(query)
-  .sort({ createdAt: -1 })
-  .skip((page - 1) * limit)
-  .limit(limit);
-```
-
-> ⚠️ **Gotcha**: Without the `limit()`, you could accidentally retrieve thousands of documents if your collection grows large. Always paginate your queries!
-
-### MongoDB Atlas Considerations
-
-We're using MongoDB Atlas (cloud service) in production, which has some specific considerations:
-
-1. **Connection Limits**: Free tier has a connection limit, so connection pooling is vital
-2. **Network Latency**: Atlas adds some latency compared to a local DB
-3. **Timeout Settings**: Need to be adjusted for serverless environments
-
-```js
-await mongoose.connect(uri, {
-  serverSelectionTimeoutMS: 10000, // If it takes longer than 10 seconds to select a server, fail
-  socketTimeoutMS: 45000, // If a socket operation takes longer than 45 seconds, fail
-  connectTimeoutMS: 10000, // If initial connection takes longer than 10 seconds, fail
-  maxPoolSize: 5, // Limit to 5 concurrent connections
-});
-```
-
-> 💡 **Pro Tip**: For serverless environments, set a lower `maxPoolSize` than you would for a traditional server to avoid connection limit issues.
+### Storage Workflow
+1. When a blog post is retrieved, `saveBlog()` automatically inserts or updates the record in the `blogs` IndexedDB object store.
+2. If network access drops, `blogService.ts` seamlessly retrieves the cached post from IndexedDB.
+3. **Storage Hygiene:** An automated 30-day FIFO policy (`cleanupOldBlogs()`) purges expired entries to prevent mobile browser storage quota warnings.
 
 ---
 
-## API Integration Patterns
+## 8. Local Development & CLI Workflows
 
-### Working with Gemini AI
+### 1. Prerequisites
+- Node.js >= 20.0.0
+- npm >= 10.0.0
+- MongoDB instance (local or MongoDB Atlas connection string)
+- Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 
-Here's how we interact with Google's Gemini AI API:
+### 2. Setup
+```bash
+# Clone the repository
+git clone https://github.com/Yashpsct010/TechInsightsAi.git
+cd TechInsightsAi
 
-```js
-export async function fetchBlogContent() {
-  try {
-    if (!API_KEY) {
-      throw new Error(
-        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file.",
-      );
-    }
+# Install all dependencies across the monorepo
+npm install
 
-    const prompt = `You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging tech blog post...`;
-
-    const requestBody = {
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7, // Controls randomness: 0 = deterministic, 1 = creative
-        maxOutputTokens: 4096, // Maximum length of response
-      },
-    };
-    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    // Handle response...
-  } catch (error) {
-    console.error("Error fetching blog content:", error);
-    throw error;
-  }
-}
+# Set up environment variables
+cp .env.example .env
 ```
 
-> 📝 **About Gemini Parameters**:
->
-> - `temperature`: Higher values make output more random, lower values more deterministic. We use 0.7 because it gives creative but still coherent results.
-> - `maxOutputTokens`: This limits the response length. We set it high because we want detailed blog posts.
-> - We could also use `topK` and `topP` to further control output, but the defaults work well for our use case.
+### 3. Running Locally
+```bash
+# Start Next.js web application and worker in dev mode
+npm run dev
 
-### Error Handling & Retries
+# Run type checks across all workspaces
+npm run check-types
 
-When dealing with external APIs, robust error handling is essential:
-
-```js
-// Simplified retry logic for API calls
-async function callWithRetry(apiCall, maxRetries = 3) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await apiCall();
-    } catch (error) {
-      console.log(`Attempt ${attempt} failed: ${error.message}`);
-      lastError = error;
-
-      // Only wait if we're going to retry again
-      if (attempt < maxRetries) {
-        // Exponential backoff: 1s, 2s, 4s, etc.
-        await new Promise((r) =>
-          setTimeout(r, 1000 * Math.pow(2, attempt - 1)),
-        );
-      }
-    }
-  }
-
-  throw lastError;
-}
+# Compile production builds
+npm run build
 ```
-
-> 💡 **Pro Tip**: Exponential backoff is crucial for external API calls. It prevents hammering the service when it's having issues.
-
-#### APIMonitor
-We use a utility called `APIMonitor` within our frontend services. It automatically wraps API calls with retry logic, handling network flickers and temporary server timeouts gracefully without manual error handling in every component.
-
-### Rate Limiting Considerations
-
-The Gemini API has rate limits we need to respect:
-
-```js
-// Example of a basic rate limiter for API calls
-class RateLimiter {
-  constructor(maxCalls, perInterval) {
-    this.maxCalls = maxCalls;
-    this.perInterval = perInterval;
-    this.calls = [];
-  }
-
-  async acquire() {
-    // Clean old calls
-    const now = Date.now();
-    this.calls = this.calls.filter((time) => now - time < this.perInterval);
-
-    // If at limit, wait until oldest call expires
-    if (this.calls.length >= this.maxCalls) {
-      const oldestCall = this.calls[0];
-      const waitTime = this.perInterval - (now - oldestCall);
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return this.acquire(); // Try again after waiting
-    }
-
-    // Add this call to the list
-    this.calls.push(now);
-    return true;
-  }
-}
-
-// Usage:
-const geminiLimiter = new RateLimiter(60, 60000); // 60 calls per minute
-async function callGeminiApi() {
-  await geminiLimiter.acquire();
-  // Make API call...
-}
-```
-
-> ⚠️ **Gotcha**: In serverless environments, this in-memory rate limiter won't work across multiple function invocations. For production, consider using a shared cache like Redis to track API call rates.
 
 ---
 
-## Offline Capabilities
+## 9. Debugging & Troubleshooting Guide
 
-Making an app work offline is tricky but worthwhile. Here's how we approach it:
+### Issue 1: Gemini API Rate Limit / Quota Exceeded (429)
+- **Cause:** Free-tier Gemini keys have request-per-minute (RPM) limits.
+- **Solution:** The worker automatically falls back to `gemini-3.1-flash-lite`. If you hit quota errors during testing, wait 60 seconds or use a dedicated project key.
 
-### Service Worker Strategy
+### Issue 2: JSON Parsing Errors on LLM Output
+- **Cause:** Gemini sometimes wraps JSON in markdown fences (` ```json `) or returns conversational preamble.
+- **Solution:** Do not use naive `JSON.parse`. Always use `extractBalancedJson()` in `geminiService.ts`, which safely isolates curly-bracket depth and string escapes.
 
-We use different caching strategies for different types of requests:
+### Issue 3: Stalled RSS Feeds
+- **Cause:** External tech news feeds can stall without terminating TCP connections.
+- **Solution:** `rssService.ts` configures a 10-second timeout on `Parser`. Stalled feeds fail fast and degrade gracefully without stalling the generation loop.
 
-```js
-// In vite.config.js
-workbox: {
-  globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/api\.yourbackend\.com\/.*$/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "api-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-    {
-      // Cache your API responses
-      urlPattern:
-        /^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "blog-api-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-        backgroundSync: {
-          name: "blog-queue",
-          options: {
-            maxRetentionTime: 24 * 60, // Retry for max of 24 hours
-          },
-        },
-      },
-    },
-    {
-      // Cache blog images
-      urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "image-cache",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
-    },
-    // ... other strategies ...
-  ],
-}
-```
-
-> 📝 **Caching Strategies Explained**:
->
-> - **NetworkFirst**: Try network, fall back to cache. Good for API responses that change.
-> - **CacheFirst**: Check cache first, only go to network if needed. Good for static assets.
-> - **StaleWhileRevalidate**: Use cached version right away while fetching fresh version in background. Good balance for semi-dynamic content.
-
-### IndexedDB for Blog Storage
-
-Alongside the service worker, we use IndexedDB to store blog data:
-
-```js
-// In offlineDataService.js
-export const getLatestBlog = async () => {
-  const latestBlogId = localStorage.getItem(LATEST_BLOG_KEY);
-  if (!latestBlogId) {
-    return null;
-  }
-
-  try {
-    // Only initialize if db doesn't exist (optimized path)
-    if (!db) {
-      await initializeDB();
-    }
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([BLOGS_STORE], "readonly");
-      const store = transaction.objectStore(BLOGS_STORE);
-      const request = store.get(latestBlogId);
-
-      request.onsuccess = (event) => {
-        resolve(event.target.result);
-      };
-
-      request.onerror = (event) => {
-        console.error("Error getting latest blog:", event.target.error);
-        reject(event.target.error);
-      };
-    });
-  } catch (error) {
-    console.error("Failed to get latest blog:", error);
-    return null;
-  }
-};
-```
-
-> ⚠️ **Gotcha**: IndexedDB operations can fail if the user is in private browsing mode in some browsers (especially Safari). Always have a fallback plan!
-
-### Background Sync
-
-For operations that need to persist when offline, we use background sync:
-
-```js
-// Register a sync event
-async function registerSync() {
-  if ("serviceWorker" in navigator && "SyncManager" in window) {
-    const registration = await navigator.serviceWorker.ready;
-    try {
-      await registration.sync.register("sync-blogs");
-      console.log("Sync registered");
-    } catch (err) {
-      console.error("Sync registration failed:", err);
-    }
-  } else {
-    console.log("Background Sync not supported");
-    // Fallback: Try to sync immediately
-    processQueue();
-  }
-}
-
-// In service worker
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-blogs") {
-    event.waitUntil(syncBlogs());
-  }
-});
-```
-
-> 💡 **Pro Tip**: Always implement a fallback when using cutting-edge browser features like Background Sync. Not all browsers support these features yet.
+### Issue 4: MongoDB Connection Pool Leaks
+- **Cause:** Directly invoking `mongoose.connect()` inside route handlers instead of using the shared connection singleton.
+- **Solution:** Always import `connectToDatabase()` from `@techinsights/database`. Never call `mongoose.connect()` directly in `apps/web`.
 
 ---
 
-## Development Workflow
+## 10. Deployment & Production Runbook
 
-### Local Development Setup
+### Production Architecture
+1. **Web Frontend & API Routes:** Deployed to **Vercel** with root directory set to `apps/web`.
+2. **Background Automation:** Executed autonomously via **GitHub Actions** on scheduled cron triggers ($0.00/mo compute cost):
+   - `.github/workflows/generate-blog.yml` (Runs nightly at `00:00 UTC`).
+   - `.github/workflows/generate-newsletter.yml` (Runs Fridays at `17:00 UTC`).
+3. **Database:** Hosted on **MongoDB Atlas**.
 
-Here's how to get your development environment set up:
-
-1. **Clone the repo and install dependencies**
-
-   ```bash
-   git clone https://github.com/your-username/TechInsightsAI.git
-   cd TechInsightsAI
-   npm install
-   ```
-
-2. **Set up environment variables**
-   Create a `.env` file in the root folder:
-
-   ```
-   VITE_GEMINI_API_KEY=your_api_key
-   VITE_UNSPLASH_ACCESS_KEY=your_unsplash_key
-   # VITE_API_BASE_URL is optional, defaults to relative path /api
-   ```
-
-3. **Start the development servers**
-
-   ```bash
-   # Frontend (in one terminal)
-   npm run dev
-
-   # Backend (in another terminal)
-   cd server
-   nodemon server.js
-   ```
-
-> 💡 **Pro Tip**: I recommend installing the Redux DevTools and React DevTools browser extensions even if we're not using Redux. They're invaluable for debugging React applications.
-
-### Testing Service Workers Locally
-
-Service workers can be tricky to test. Here's how to do it effectively:
-
-1. **Use Chrome's DevTools**
-   - Open DevTools > Application > Service Workers
-   - You can view, debug, and unregister service workers here
-
-2. **Test offline functionality**
-   - In DevTools > Network, check "Offline" to simulate offline mode
-   - Navigate around the app to ensure it works without a connection
-
-> ⚠️ **Gotcha**: Service workers only work with HTTPS or localhost. If you're testing on a custom domain, you'll need to set up HTTPS.
-
-### Common Development Issues
-
-Here are some issues you might encounter and how to solve them:
-
-1. **Service worker not updating**
-   - Try unregistering the service worker in DevTools
-   - Ensure your workbox configuration has the right settings
-
-2. **CORS errors when calling the backend**
-   - Check that your backend CORS settings match the frontend origin
-   - During development, ensure the backend allows localhost
-
-3. **IndexedDB not working**
-   - Make sure you're not in private browsing mode
-   - Check browser support (older browsers may not support IndexedDB)
-
----
-
-## Debugging Guide
-
-Here are some common issues you might encounter and how to debug them:
-
-### Frontend Issues
-
-1. **White screen / App not loading**
-   - Check the browser console for JavaScript errors
-   - Verify that all required environment variables are set
-   - Check network tab for failed requests
-
-2. **Service worker issues**
-   - Inspect Application tab > Service Workers in DevTools
-   - Try unregistering and reloading
-   - Check workbox logs in console (they start with `workbox -`)
-
-3. **Component not rendering as expected**
-   - Use React DevTools to inspect component props and state
-   - Add temporary `console.log()` statements to track render cycles
-
-### Backend Issues
-
-1. **API returning 500 errors**
-   - Check server logs for detailed error messages
-   - Verify database connection is working
-   - Check if Gemini API is responsive
-
-2. **MongoDB connection failures**
-   - Verify connection string is correct
-   - Check network connectivity to MongoDB Atlas
-   - Verify IP whitelist settings in MongoDB Atlas
-
-3. **Blog generation failing**
-   - Check Gemini API quota and rate limits
-   - Verify API key is valid and has proper permissions
-   - Review prompt structure for errors
-
-### Performance Issues
-
-1. **Slow page load times**
-   - Use Lighthouse in Chrome DevTools to identify bottlenecks
-   - Check bundle size with `npm run build -- --report`
-   - Consider code splitting for large components
-
-2. **High memory usage**
-   - Look for memory leaks using Chrome DevTools Memory tab
-   - Check for useEffect cleanup functions
-   - Verify that event listeners are properly removed
-
----
-
-## Deployment Process
-
-We use a hybrid deployment orchestration to balance user experience with compute intensive requirements:
-
-### Frontend & Read-API Deployment (Vercel)
-The frontend and read-heavy API routes are deployed as serverless functions on Vercel. This ensures minimal latency for users and eliminates cold starts for fetching existing blog content.
-
-### Backend & AI Generation (Render)
-Resource-intensive tasks, such as Gemini AI content generation and scheduled cron jobs, are hosted on Render to provide a persistent compute environment.
-
-### GitHub Actions (CI/CD)
-CI/CD workflows are optimized to run tasks in parallel, drastically reducing the time required for automated blog generation and deployment.
-
-### Frontend Deployment
-
-The frontend is automatically deployed whenever changes are pushed to the main branch:
-
-### Monitoring and Logs
-
-After deployment, you can monitor the application:
-
-1. **Vercel Dashboard**: Shows deployment status, logs, and performance metrics
-2. **MongoDB Atlas**: Monitor database performance and connections
-3. **Google Cloud Console**: Monitor Gemini API usage and quotas
-
-> 💡 **Pro Tip**: Set up alerts in Vercel for deployment failures and performance issues to catch problems early.
-
----
-
-## Final Tips & Best Practices
-
-Here are some additional tips to help you work effectively with this codebase:
-
-### Code Organization
-
-- Follow the established patterns for new components and features
-- Keep components small and focused on a single responsibility
-- Use meaningful names for files, components, and functions
-
-### Performance
-
-- Be mindful of re-renders - use React.memo and useMemo when appropriate
-- Optimize images before adding them to the project
-- Use lazy loading for components that aren't needed immediately
-
-### Error Handling
-
-- Always handle potential errors in async operations
-- Provide meaningful error messages to users
-- Log errors on the server side for debugging
-
-### Testing
-
-- Write tests for critical functionality
-- Test offline functionality regularly
-- Verify PWA features work as expected
-
-### Collaboration
-
-- Write meaningful commit messages
-- Document complex logic with comments
-- Update this guide when you make significant architectural changes
-
----
-
-I hope this guide helps you get up to speed quickly! If you have any questions or need clarification on any part of the codebase, feel free to reach out. We're all here to help each other succeed.
-
-Happy coding!
+### Setting Up GitHub Actions Secrets
+Ensure the following repository secrets are configured in GitHub Settings > Secrets and variables > Actions:
+- `MONGODB_URI`
+- `GEMINI_API_KEY`
+- `UNSPLASH_ACCESS_KEY`
+- `EMAIL_USER`
+- `EMAIL_PASS`

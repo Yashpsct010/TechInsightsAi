@@ -1,917 +1,375 @@
-# TechInsightsAI - System Documentation
+# TechInsightsAI (v2.0) - System Architecture & Technical Documentation
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [System Architecture](#system-architecture)
-3. [Frontend Structure](#frontend-structure)
-4. [Backend Structure](#backend-structure)
-5. [Database Design](#database-design)
-6. [API Integration](#api-integration)
-7. [Offline Capabilities](#offline-capabilities)
-8. [Key Features](#key-features)
-9. [Workflows](#workflows)
-10. [Technologies Used](#technologies-used)
-11. [Deployment Architecture](#deployment-architecture)
+1. [Project Overview](#1-project-overview)
+2. [Monorepo & System Architecture](#2-monorepo--system-architecture)
+3. [Web Application Architecture (`apps/web`)](#3-web-application-architecture-appsweb)
+4. [Autonomous AI Worker Service (`apps/ai-worker`)](#4-autonomous-ai-worker-service-appsai-worker)
+5. [Shared Database Package (`packages/database`)](#5-shared-database-package-packagesdatabase)
+6. [API Route Specifications (`app/api/*`)](#6-api-route-specifications-appapi)
+7. [AI Grounding, RAG & Hallucination Prevention](#7-ai-grounding-rag--hallucination-prevention)
+8. [Offline Capabilities & Data Resilience (`idb`)](#8-offline-capabilities--data-resilience-idb)
+9. [Automated CI/CD & Serverless Cron Workflows](#9-automated-cicd--serverless-cron-workflows)
+10. [Technologies Used](#10-technologies-used)
+11. [Deployment Architecture & Production Setup](#11-deployment-architecture--production-setup)
+12. [Appendix & Environment Configuration](#12-appendix--environment-configuration)
 
 ---
 
-## Project Overview
+## 1. Project Overview
 
-TechInsightsAI is a modern web application that leverages AI to generate and deliver technology-focused content. The application serves as a tech blog platform with automatic content generation capabilities, powered by Google's Gemini AI API.
+**TechInsightsAI v2.0** is an enterprise-ready, autonomous tech blogging and intelligence platform built on Next.js 15 (App Router), Turborepo, and a decoupled background AI worker.
 
-The platform offers users the latest insights on technology trends, coding tips, AI/ML developments, cybersecurity, and emerging technologies. With its progressive web app (PWA) capabilities, TechInsightsAI provides a seamless experience across devices and network conditions, including offline functionality.
+The platform automatically tracks real-time tech developments from curated, authoritative RSS feeds (TechCrunch, MIT Tech Review, Wired, Hacker News), uses Google's Gemini LLM to synthesize deep-dive articles and developer hacks, and publishes them with zero human intervention.
 
-**Key Objectives:**
-
-- Deliver AI-generated tech content that is informative and engaging
-- Maintain a cohesive and modern brutalist/terminal/orange theme across all components
-- Provide a responsive, accessible user interface
-- Enable offline access to content
-- Implement efficient caching strategies for performance
-- Create a scalable architecture that separates frontend and backend concerns
+### Core Value Propositions
+- **Zero-TTFB & Instant SEO:** Pre-rendered via Next.js 15 Static Site Generation (SSG) and Server-Side Rendering (SSR) with dynamic OpenGraph cards and JSON-LD structured schemas (`TechArticle`, `WebSite`, `Organization`).
+- **Decoupled Architecture:** Read-heavy web traffic on Vercel Edge is strictly separated from compute-heavy AI generation in background workers.
+- **Hallucination Prevention:** Strict Retrieval-Augmented Grounding (RAG) constrains Gemini prompts to real-world 48-hour news events and mandatory canonical source URLs.
+- **Offline PWA Capabilities:** Offline reading powered by modern Promise-based IndexedDB (`idb`) with automated storage quota management and FIFO cleanup.
+- **Cyber-Terminal Neo-Brutalist Aesthetic:** High-contrast safety orange (`#ec5b13`) on obsidian black (`#0a0a0c`), glass panels, monospace terminal typography, and an interactive HTML5 scratch-canvas daily intel decryptor.
 
 ---
 
-## System Architecture
+## 2. Monorepo & System Architecture
 
-TechInsightsAI follows a modern client-server architecture with clear separation of concerns between the frontend and backend components.
+The project is structured as a **Turborepo monorepo** managed with npm workspaces, ensuring code sharing, type safety, and parallel task orchestration.
 
 ### High-Level Architecture Diagram
 
 ```
-┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│                  │      │                  │      │                  │
-│  React Frontend  │<────>│  Express Backend │<────>│  MongoDB Database│
-│                  │      │                  │      │                  │
-└────────┬─────────┘      └────────┬─────────┘      └──────────────────┘
-         │                         │                          ▲
-         │                         │                          │
-         │                         ▼                          │
-┌────────▼─────────┐      ┌──────────────────┐      ┌─────────▼────────┐
-│                  │      │                  │      │                  │
-│  Service Worker  │      │    Gemini AI     │      │  Mongoose ODM    │
-│  (PWA/Caching)   │      │      API         │      │                  │
-│                  │      │                  │      │                  │
-└──────────────────┘      └──────────────────┘      └──────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             Turborepo Monorepo                                   │
+│                                                                                  │
+│   ┌───────────────────────────────────┐    ┌─────────────────────────────────┐   │
+│   │             apps/web              │    │         apps/ai-worker          │   │
+│   │      (Next.js 15 App Router)      │    │  (Standalone Node.js AI Engine) │   │
+│   │                                   │    │                                 │   │
+│   │  • Server-Side Rendering (SSR)    │    │  • RSS Ingestion (48h news)     │   │
+│   │  • Serverless APIs (/api/*)       │    │  • Gemini Grounded Synthesis    │   │
+│   │  • TanStack Query & Axios Client  │    │  • Unsplash Image Matcher       │   │
+│   │  • Promise-based IndexedDB (idb)  │    │  • Nodemailer HTML Newsletter   │   │
+│   │  • Edge Vercel Deployment         │    │  • GitHub Actions Daily Cron    │   │
+│   └─────────────────┬─────────────────┘    └────────────────┬────────────────┘   │
+│                     │                                       │                    │
+│                     └───────────────────┬───────────────────┘                    │
+│                                         │                                        │
+│                                         ▼                                        │
+│                        ┌─────────────────────────────────┐                       │
+│                        │        packages/database        │                       │
+│                        │                                 │                       │
+│                        │  • Shared Mongoose Schemas      │                       │
+│                        │  • Cached Connection Pool       │                       │
+│                        │  • TypeScript Definitions       │                       │
+│                        └────────────────┬────────────────┘                       │
+└─────────────────────────────────────────┼────────────────────────────────────────┘
+                                          │
+                                          ▼
+                               ┌─────────────────────┐
+                               │    MongoDB Atlas    │
+                               │   (Cloud Cluster)   │
+                               └─────────────────────┘
 ```
 
-### Core Components
-
-1. **Frontend (Client)**
-   - React.js application
-   - PWA features with service worker
-   - IndexedDB for offline data storage
-   - Framer Motion for animations
-   - Tailwind CSS for styling
-
-2. **Backend (Server)**
-   - Express.js REST API
-   - Mongoose for data modeling
-   - Blog generation services
-   - API integrations
-
-3. **Database**
-   - MongoDB for persistent storage
-   - Blog posts and related content
-
-### Component Architecture
-
-The frontend follows a component-based architecture using React. Components are organized by functionality and reusability.
-
-#### Directory Structure
-
+### Monorepo Workspaces Layout
 ```
-src/
-├── components/          # UI components
-│   ├── Header.jsx       # Navigation header
-│   ├── Footer.jsx       # Site footer with links
-│   ├── Home.jsx         # Landing page component
-│   ├── Blog.jsx         # Blog display component
-│   ├── BlogsPage.jsx    # Blog listing page
-│   ├── BlogDetailPage.jsx # Individual blog view
-│   ├── About.jsx        # About page component
-│   ├── PWAInstallPrompt.jsx # PWA installation UI
-│   └── OfflineNotice.jsx # Connection status notification
-│
-├── services/            # Service integrations
-│   ├── offlineDataService.js # IndexedDB management
-│   └── components/services/geminiApi.js # AI API client
-│
-├── App.jsx              # Main application component
-└── main.jsx             # Application entry point
-```
-
-### Key Components
-
-#### App.jsx
-
-Serves as the application's main component, handling routing and layout structure. It initializes the offline database and sets up the application structure with header, main content area, and footer.
-
-```jsx
-function App() {
-  useEffect(() => {
-    // Initialize the offline database when the app loads
-    initializeDB().catch(console.error);
-  }, []);
-
-  return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <OfflineNotice />
-        <Header />
-        <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blogs" element={<BlogsPage />} />
-              <Route path="/blog/:id" element={<BlogDetailPage />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-        <Footer />
-        <PWAInstallPrompt />
-      </div>
-    </Router>
-  );
-}
-```
-
-#### BlogsPage.jsx
-
-Handles displaying the list of blog posts with search and filtering functionality.
-
-#### Blog.jsx
-
-Displays the main blog interface, typically showing the latest content.
-
-#### Footer.jsx
-
-Contains site navigation, subscription form, and copyright information.
-
-### State Management
-
-The application uses React's built-in state management with hooks. For example:
-
-- `useState` for component-level state
-- `useEffect` for side effects like API calls
-- Custom hooks for specialized functionality
-
-### Animation System
-
-Framer Motion is used for page transitions and UI animations:
-
-```jsx
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  exit={{ opacity: 0 }}
-  transition={{ duration: 0.5 }}
->
-  {/* Component content */}
-</motion.div>
-```
-
-### PWA Configuration
-
-The application is configured as a Progressive Web App with:
-
-- Service Worker for caching
-- Offline capabilities
-- Install prompts
-- Background sync
-
-The service worker registration is handled in main.jsx:
-
-```jsx
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    if (confirm("New content available. Reload?")) {
-      updateSW(true);
-    }
-  },
-  onOfflineReady() {
-    console.log("App ready to work offline");
-  },
-});
+TechInsightsAi/
+├── .github/
+│   └── workflows/
+│       ├── generate-blog.yml        # Daily 00:00 UTC blog & intel generator
+│       └── generate-newsletter.yml  # Weekly Friday 17:00 UTC newsletter dispatch
+├── apps/
+│   ├── web/                         # Next.js 15 App Router (Frontend + API Routes)
+│   └── ai-worker/                   # Gemini AI generation & RSS ingestion engine
+├── packages/
+│   ├── database/                    # Shared Mongoose models & connection pool
+│   └── tsconfig/                    # Shared base TypeScript configurations
+├── AGENTS.md                        # Architectural specification & agent guidelines
+├── turbo.json                       # Turborepo task pipeline
+└── package.json                     # Monorepo workspaces definition
 ```
 
 ---
 
-## Backend Structure
+## 3. Web Application Architecture (`apps/web`)
 
-### Server Architecture
+The web application is built with **Next.js 15 (App Router)**, **React 19**, **TypeScript**, and **Tailwind CSS**.
 
-The backend is built with Express.js and follows a modular architecture with clear separation of concerns.
+### Key Architectural Layers
 
-#### Directory Structure
+#### 1. Rendering & SEO Strategy
+- **Static Site Generation (SSG) & SSR:** Article views (`app/blog/[id]/page.tsx`) and static pages (`/about`, `/`) are rendered server-side.
+- **Dynamic SEO Metadata:** `generateMetadata` injects dynamic OpenGraph titles, descriptions, canonical URLs, and Twitter cards.
+- **JSON-LD Structured Data:** Root layout injects `WebSite` and `Organization` schemas; blog pages inject `TechArticle` / `BlogPosting` schemas with author, publisher, and date metadata.
 
-```
-server/
-├── controllers/         # Request handlers
-│   └── blogController.js # Blog-related operations
-│
-├── models/              # Data models
-│   └── Blog.js          # Blog schema definition
-│
-├── routes/              # API routes
-│   └── blogRoutes.js    # Blog endpoint definitions
-│
-├── utils/               # Utility functions
-│   └── db.js            # Database connection handling
-│
-├── cron/                # Scheduled tasks
-│   └── blogGenerator.js # Automated content generation
-│
-└── server.js            # Entry point for the Express app
-```
-
-### Key Components
-
-#### server.js
-
-The main entry point for the backend application. It sets up middleware, connects to the database, and registers routes.
-
-```js
-// Simplified version
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const blogRoutes = require("./routes/blogRoutes");
-const connectToDB = require("./utils/db");
-
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// CORS configuration
-app.use(
-  cors({
-    origin: ["https://techinsightsai.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    credentials: true,
-  }),
-);
-
-app.use(express.json({ limit: "1mb" }));
-
-// Routes
-app.use("/api/blogs", blogRoutes);
-
-// Server startup for serverless (Vercel) vs traditional
-if (process.env.VERCEL) {
-  // Connect to DB when module loads for faster cold starts
-  connectToDB().catch(console.error);
-  module.exports = app;
-} else {
-  // Traditional server startup
-  const startServer = async () => {
-    await connectToDB();
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      // Only run cron jobs in traditional environment
-      if (!process.env.VERCEL) {
-        const setupCronJobs = require("./cron/blogGenerator");
-        setupCronJobs();
-      }
-    });
-  };
-  startServer().catch(console.error);
-}
-```
-
-#### blogRoutes.js
-
-Defines the API endpoints for blog-related operations.
-
-```js
-const express = require("express");
-const router = express.Router();
-const blogController = require("../controllers/blogController");
-
-// Get latest blog (or generate new one if cache expired)
-router.get("/latest", blogController.getLatestBlog);
-
-// Get all blogs with pagination
-router.get("/all", blogController.getAllBlogs);
-
-// Generate a new blog (protected, for admin or cron job)
-router.post("/generate", blogController.generateBlog);
-
-// Get a single blog by ID
-router.get("/:id", async (req, res) => {
-  // Blog retrieval logic...
-});
-
-// Diagnostic endpoints
-router.get("/diagnose", async (req, res) => {
-  // System diagnostics...
-});
-
-module.exports = router;
-```
-
-#### blogController.js
-
-Contains the business logic for handling blog operations.
-
-```js
-// Get latest blog
-exports.getLatestBlog = async (req, res) => {
-  try {
-    const requestedGenre = req.query.genre || null;
-    const query = requestedGenre ? { genre: requestedGenre } : {};
-
-    // Find the most recent blog for the given query
-    const latestBlog = await Blog.findOne(query).sort({ createdAt: -1 }).exec();
-
-    if (!latestBlog) {
-      return res.status(404).json({ error: "No blog posts found." });
-    }
-
-    res.json({ blog: latestBlog });
-  } catch (error) {
-    console.error("Error getting latest blog:", error);
-    res.status(500).json({ error: error.message });
-  }
-};
-/*
-Note: Generation is handled separately to keep read operations fast.
-*/
-```
-
-#### Blog.js (Model)
-
-Defines the database schema for blog posts.
-
-```js
-const mongoose = require("mongoose");
-
-const BlogSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    body: {
-      type: String,
-      required: true,
-    },
-    image: {
-      type: String,
-      required: true,
-    },
-    imageAlt: {
-      type: String,
-      required: true,
-    },
-    imageCaption: {
-      type: String,
-      required: false,
-    },
-    genre: {
-      type: String,
-      required: true,
-      enum: [
-        "tech-news",
-        "ai-ml",
-        "cybersecurity",
-        "coding",
-        "emerging-tech",
-        "general",
-      ],
-      default: "general",
-    },
-    links: [
-      {
-        title: String,
-        url: String,
-        description: String,
-        image: String,
-        imageAlt: String,
+#### 2. Client-Side Data & Caching (`@tanstack/react-query`)
+Managed inside `app/providers.tsx`:
+```tsx
+const [queryClient] = useState(
+  () =>
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 1000 * 60 * 5, // 5 minutes cache
+          gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
+          refetchOnWindowFocus: false,
+          retry: 1,
+        },
       },
-    ],
-  },
-  { timestamps: true },
+    })
 );
-
-module.exports = mongoose.model("Blog", BlogSchema);
 ```
+Articles and archive queries are served instantly from the in-memory cache upon navigation, with passive background revalidation.
 
-### Automated Blog Generation
+#### 3. Centralized Axios Client & Interceptors (`services/apiClient.ts`)
+- **Request Interceptor:** Automatically checks `localStorage` for active user credentials and injects `Authorization: Bearer <token>`.
+- **Response Interceptor:** Traps `401 Unauthorized` responses and fires a decoupled `auth:unauthorized` window event so `AuthContext` can quietly log out stale sessions without hard page reloads.
 
-The system includes automated content generation through:
-
-1. **Scheduled Cron Jobs**: In development, using node-cron
-2. **GitHub Actions**: In production, using scheduled workflows
-3. **On-demand Generation**: Via API endpoint
+#### 4. Non-Blocking Optimistic Authentication (`context/AuthContext.tsx`)
+- Eliminates the traditional root-level loading spinner. Public pages render immediately (Zero TTFB).
+- Profile verification runs asynchronously in the background. Only protected routes (e.g., `/bookmarks`, `/profile`, `/jobs`) conditionally require authentication.
 
 ---
 
-## Database Design
+## 4. Autonomous AI Worker Service (`apps/ai-worker`)
 
-### MongoDB Schema
+The background worker is an independent Node.js service running on `NodeNext` and `tsx`, strictly isolated from user HTTP traffic.
 
-TechInsightsAI uses MongoDB for data storage with the following main collection:
+### Worker Subsystems
 
-#### Blog Collection
+1. **RSS Ingestion Engine (`src/services/rssService.ts`):**
+   Scrapes curated tech feeds across 5 distinct genres (`ai-ml`, `cybersecurity`, `coding`, `emerging-tech`, `tech-news`). Feeds include TechCrunch, The Verge, MIT News, KrebsOnSecurity, Ars Technica, and Dev.to. Enforces strict 10s socket timeouts to prevent network hangs.
 
-```
-Blog {
-  _id: ObjectId
-  title: String
-  body: String (HTML content)
-  image: String (URL)
-  imageAlt: String
-  imageCaption: String
-  genre: String (enum: "tech-news", "ai-ml", "cybersecurity", "coding", "emerging-tech", "general")
-  links: [
-    {
-      title: String
-      url: String
-      description: String
-      image: String
-      imageAlt: String
-    }
-  ]
-  createdAt: Date
-  updatedAt: Date
-}
-```
+2. **Grounded Gemini Synthesizer (`src/services/geminiService.ts`):**
+   - Model: Google Gemini API (`gemini-3.1-flash-lite`).
+   - Generation Config: `temperature: 0.7`, `responseMimeType: "application/json"`.
+   - Balanced JSON Parser: A custom state-machine extractor (`extractBalancedJson`) that tracks curly-bracket depth and string escapes, safely bypassing markdown wrappers or conversational preamble.
+   - Safety Fallback: Automatically catches `finishReason: SAFETY` and retries with a safe, generalized educational prompt.
 
-### Database Connection
+3. **Image Matching Engine (`src/services/imageService.ts`):**
+   Queries the Unsplash API using article keyword extracts with exponential retries and fallback placeholders.
 
-The application uses Mongoose as an ODM (Object Data Modeling) library for MongoDB. Connection handling is optimized for serverless environments:
+4. **Automated Newsletter Engine (`src/services/newsletterService.ts`):**
+   Compiles a weekly cyberpunk dark-mode HTML digest of the top articles and developer hacks, dispatched via Nodemailer in batches to active subscribers.
 
-```js
-// In db.js
-const mongoose = require("mongoose");
+5. **Standalone Execution CLI Scripts:**
+   - `npm run generate:blog`: Generates and persists a new blog post.
+   - `npm run generate:intel`: Generates daily hacker/productivity tip (with 12-hour cadence lock).
+   - `npm run send:newsletter`: Compiles and sends weekly email digest.
 
-let cachedPromise = null;
+---
 
-const connectToDB = async () => {
-  // If we have a cached promise, we are already connecting or are connected.
-  if (cachedPromise) {
-    return cachedPromise;
-  }
+## 5. Shared Database Package (`packages/database`)
 
-  // Check if we have a live connection.
+Both `apps/web` and `apps/ai-worker` consume database models and connection pooling logic from `@techinsights/database`.
+
+### Serverless-Safe Connection Pooling (`src/connection.ts`)
+
+In serverless platforms like Vercel, functions spin up on demand. Creating a new database connection per request exhausts MongoDB connection pools. We resolve this using a global cached promise singleton:
+
+```typescript
+let cachedPromise: Promise<typeof mongoose> | null = (global as any).mongooseConnectionPromise || null;
+
+export async function connectToDatabase(uri?: string): Promise<typeof mongoose> {
+  if (cachedPromise) return cachedPromise;
+  
   if (mongoose.connection.readyState === 1) {
-    console.log("Using existing database connection.");
-    return Promise.resolve();
+    return Promise.resolve(mongoose);
   }
 
-  console.log("Creating new database connection.");
-  const uri = process.env.MONGODB_URI;
+  const mongoUri = uri || process.env.MONGODB_URI;
+  if (!mongoUri) throw new Error("MONGODB_URI is not defined.");
 
-  // Set up a new connection promise
-  cachedPromise = mongoose.connect(uri, {
+  cachedPromise = mongoose.connect(mongoUri, {
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    maxPoolSize: 5,
+    maxPoolSize: 10,
+    minPoolSize: 1,
     retryWrites: true,
     w: "majority",
   });
 
-  try {
-    await cachedPromise;
-    console.log("MongoDB successfully connected.");
-
-    // Clear on disconnect
-    mongoose.connection.on("disconnected", () => {
-      cachedPromise = null;
-    });
-  } catch (error) {
-    cachedPromise = null;
-    throw error;
-  }
-
+  (global as any).mongooseConnectionPromise = cachedPromise;
   return cachedPromise;
-};
-```
-
-## API Integration
-
-### Gemini AI API Integration
-
-The application integrates with Google's Gemini AI API to generate blog content:
-
-```js
-export async function fetchBlogContent() {
-  try {
-    if (!API_KEY) {
-      throw new Error(
-        "API key is missing. Please add VITE_GEMINI_API_KEY to your .env file.",
-      );
-    }
-
-    const prompt = `You are a cutting-edge technology blogger. Generate a comprehensive, informative, and engaging tech blog post covering the latest trends in technology.
-
-    Blog Structure & Requirements:  
-    Ensure the article follows this exact structure with HTML tags for proper formatting:
-    
-    1. Title (h1)  
-       - The title should be engaging, SEO-friendly, and under 70 characters.  
-    
-    2. Introduction (h2)  
-       - Hook the reader in 2-3 sentences.  
-       - Explain why this topic is important today.  
-    
-    3. Key Points & Analysis (h2)  
-       - Cover at least three of the following areas:  
-         - Tech Hacks & Coding Tricks (New shortcuts, tools, or techniques)  
-         - Latest Software & Feature Releases (New updates, frameworks, tools)
-         // Additional formatting instructions...
-    `;
-
-    const requestBody = {
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 4096,
-      },
-    };
-
-    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    // Response handling...
-  } catch (error) {
-    console.error("Error fetching blog content:", error);
-    throw error;
-  }
 }
 ```
 
-### External Data Integration (Medium)
+### Models & Indexing
 
-In addition to Gemini-generated content, the platform integrates with Medium's data feeds to ensure content remains current and aligned with trending topics. This is handled via dedicated synchronization services that fetch and parse the latest technology-focused posts.
-
-### Internal API Structure
-
-The application's internal API follows RESTful principles:
-
-| Endpoint                   | Method | Description                                   | Parameters                              |
-| -------------------------- | ------ | --------------------------------------------- | --------------------------------------- |
-| `/api/blogs/latest`        | GET    | Get the latest blog post                      | `genre` (optional)                      |
-| `/api/blogs/all`           | GET    | Get all blogs with pagination                 | `page`, `limit`, `genre` (all optional) |
-| `/api/blogs/generate`      | POST   | Generate a new blog post                      | `genre` (optional)                      |
-| `/api/blogs/:id`           | GET    | Get a specific blog by ID                     | `id` (required)                         |
-| `/api/blogs/diagnose`      | GET    | System diagnostics                            | None                                    |
-| `/api/auth/register`       | POST   | Register a new user                           | `name`, `email`, `password`             |
-| `/api/auth/login`          | POST   | Authenticate and login                        | `email`, `password`                     |
-| `/api/auth/profile`        | GET    | Get user profile                              | Bearer Token                            |
-| `/api/jobs/extract-skills` | POST   | Parse resume to extract skills (Admin only)   | `resume` (File)                         |
-| `/api/jobs/search`         | GET    | Search for tech jobs (Admin only)             | `query`                                 |
+- **`Blog` Model:**
+  - Compound Index: `{ genre: 1, createdAt: -1 }` for instant filtered tab queries.
+  - Sorting Index: `{ createdAt: -1 }` for the homepage latest-drop feed.
+  - Text Search Index: `{ title: "text", body: "text" }` for full-text search.
+- **`User` Model:**
+  - Salted bcrypt password hashing with pre-save hooks and `matchPassword()` verification method.
+  - Bookmarks array storing referenced `Blog` ObjectIds.
+  - Topic preferences array and newsletter subscription boolean flag.
+- **`Intel` Model:**
+  - Daily micro-content bite with indexed `displayDate` string for fast calendar lookups.
 
 ---
 
-## Offline Capabilities
+## 6. API Route Specifications (`app/api/*`)
 
-### IndexedDB Implementation
+All API routes run as native Next.js Serverless Route Handlers in `apps/web/app/api/`:
 
-The application uses IndexedDB for client-side storage to enable offline functionality:
-
-```js
-export const initializeDB = () => {
-  // Return immediately if db is already initialized (optimized for performance)
-  if (db) {
-    return Promise.resolve(db);
-  }
-
-  return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = (event) => {
-      console.error("IndexedDB error:", event.target.error);
-      reject("Could not open IndexedDB");
-    };
-
-    request.onsuccess = (event) => {
-      db = event.target.result;
-      console.log("IndexedDB initialized successfully");
-      resolve(db);
-    };
-
-    request.onupgradeneeded = (event) => {
-      const database = event.target.result;
-
-      if (!database.objectStoreNames.contains(BLOGS_STORE)) {
-        // Create store and indexes
-        const store = database.createObjectStore(BLOGS_STORE, {
-          keyPath: "_id",
-        });
-        store.createIndex("genre", "genre", { unique: false });
-        store.createIndex("createdAt", "createdAt", { unique: false });
-      }
-    };
-  });
-};
-```
-
-### Service Worker Configuration
-
-The service worker is configured to handle different caching strategies for various types of requests:
-
-```js
-// vite.config.js (workbox configuration)
-workbox: {
-  globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/api\.yourbackend\.com\/.*$/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "api-cache",
-        expiration: {
-          maxEntries: 50,
-        },
-      },
-    },
-    {
-      // Cache blog API responses
-      urlPattern: /^https?:\/\/(?:localhost|your-api-domain\.com).*\/api\/blogs.*/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "blog-api-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
-        },
-        backgroundSync: {
-          name: "blog-queue",
-          options: {
-            maxRetentionTime: 24 * 60,
-          },
-        },
-      },
-    },
-    {
-      // Cache blog images
-      urlPattern: /\.(?:png|jpg|jpeg|svg|webp)$/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "image-cache",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
-    },
-    {
-      // Fallback for everything else
-      urlPattern: /.*$/,
-      handler: "NetworkFirst",
-    },
-  ],
-}
-```
-
-### Offline-First UX
-
-The application provides feedback to users about their online/offline status:
-
-```jsx
-<OfflineNotice /> // Component that displays when the user is offline
-```
+| Route | Method | Description | Auth Required |
+| :--- | :---: | :--- | :---: |
+| `/api/blogs/latest` | `GET` | Retrieves the latest published blog (with optional `?genre=` filter). | Public |
+| `/api/blogs` | `GET` | Paginated blog archive with genre, keyword search, and date filters. | Public |
+| `/api/blogs/[id]` | `GET` | Fetches a single blog post by its MongoDB ObjectId. | Public |
+| `/api/auth/register` | `POST` | Creates a new user account and issues a signed JWT token. | Public |
+| `/api/auth/login` | `POST` | Authenticates user credentials via bcrypt and returns JWT. | Public |
+| `/api/auth/profile` | `GET` | Returns authenticated user profile and bookmarks. | Bearer JWT |
+| `/api/auth/preferences` | `PUT` | Updates user topic preferences and newsletter opt-in status. | Bearer JWT |
+| `/api/auth/bookmarks` | `GET` | Retrieves all saved blog posts for the authenticated user. | Bearer JWT |
+| `/api/auth/bookmarks/[id]`| `POST` | Atomically toggles a blog bookmark on/off. | Bearer JWT |
+| `/api/intel/today` | `GET` | Retrieves today's daily hacker intelligence bite. | Public |
+| `/api/system-status` | `GET` | Returns live cluster telemetry (database metrics, FLOPs load, DEFCON status). | Public |
+| `/api/jobs/search` | `GET` | Searches live technology roles via RapidAPI JSearch. | Admin JWT |
+| `/api/jobs/extract-skills`| `POST` | Multimodal PDF resume skill parser powered by Gemini. | Admin JWT |
 
 ---
 
-## Key Features
+## 7. AI Grounding, RAG & Hallucination Prevention
 
-### 1. AI-Generated Content
+To prevent the LLM from fabricating breaking news, dates, or non-existent technologies, TechInsightsAI uses a 4-tier grounding protocol:
 
-- Integration with Google's Gemini AI API
-- Prompt engineering for high-quality tech content
-- Content categorization by genre
-
-### 2. Progressive Web App Features
-
-- Offline functionality
-- Installable on devices
-- Service worker for caching
-- Background sync
-
-### 3. Responsive Design
-
-- Mobile-first approach with Tailwind CSS
-- Adaptive layout for all screen sizes
-- Optimized images and assets
-
-### 4. Performance Optimizations
-
-- Efficient caching strategies (StaleWhileRevalidate)
-- APIMonitor: Intelligent frontend retry mechanism with exponential backoff for enhanced API resilience
-- Lazy-loading of components and images
-- Optimized database queries and indexing
-- Payload optimization (excluding heavy content from list views)
-- Code splitting
-
-### 5. Enhanced User Experience
-
-- Smooth animations with Framer Motion
-- Intuitive navigation
-- Accessibility features
+1. **Pre-Generation RSS Scraping:** The system retrieves real-world article titles, summaries, and URLs published in the last 48 hours from authoritative domains (e.g., `techcrunch.com`, `news.mit.edu`, `krebsonsecurity.com`).
+2. **Context Injection:** Ingested articles are formatted as `ARTICLE_SOURCE` blocks and injected directly into the Gemini prompt.
+3. **Mandatory Source Attribution Contract:** The prompt explicitly enforces:
+   ```text
+   CRITICAL INSTRUCTION: USE THESE REAL NEWS SOURCES FOR YOUR BLOG.
+   MANDATORY: For the "links" section, ONLY USE THE URLs PROVIDED BELOW.
+   DO NOT HALLUCINATE OR CREATE NEW URLs.
+   ```
+4. **Safety & Fallback Circuit Breaker:** If breaking news content trips Gemini safety filters, a `SafetyError` handler retries generation using a timeless technical curriculum (algorithms, design patterns) rather than publishing speculative rumors.
 
 ---
 
-## Workflows
+## 8. Offline Capabilities & Data Resilience (`idb`)
 
-### Blog Generation Workflow
+Offline reading is powered by the browser's IndexedDB API, modernized using the Promise-based `idb` library in `services/offlineDataService.ts`.
 
-```
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│               │     │               │     │               │     │               │
-│ Request for   │────>│ Check cache   │────>│ Generate with │────>│ Save to       │
-│ latest blog   │     │ for recent    │     │ Gemini AI     │     │ database      │
-│               │     │ blog          │     │               │     │               │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
-                             │                                            │
-                             │                                            │
-                     ┌───────▼───────┐                            ┌───────▼───────┐
-                     │               │                            │               │
-                     │ Return cached │                            │ Return new    │
-                     │ blog if recent│                            │ blog to user  │
-                     │               │                            │               │
-                     └───────────────┘                            └───────────────┘
-```
-
-### User Content Access Workflow
-
-```
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│               │     │               │     │               │     │               │
-│ User requests │────>│ Check service │────>│ Fetch from    │────>│ Display       │
-│ blog content  │     │ worker cache  │     │ network if    │     │ content to    │
-│               │     │               │     │ needed        │     │ user          │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
-                             │                      │                     │
-                             │                      │                     │
-                     ┌───────▼───────┐     ┌────────▼──────┐      ┌───────▼───────┐
-                     │               │     │               │      │               │
-                     │ Return cached │     │ Save to       │      │ Store in      │
-                     │ content if    │     │ service worker│      │ IndexedDB for │
-                     │ available     │     │ cache         │      │ offline use   │
-                     │               │     │               │      │               │
-                     └───────────────┘     └───────────────┘      └───────────────┘
-```
-
-### User Authentication Workflow
-
-```
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│               │     │               │     │               │     │               │
-│ User submits  │────>│ Validate      │────>│ Hash password │────>│ Store in DB & │
-│ credentials   │     │ Credentials   │     │ or Verify Hash│     │ Return JWT    │
-│               │     │               │     │               │     │               │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
-                                                                        │
-                                                                        ▼
-                                                              ┌───────────────┐
-                                                              │               │
-                                                              │ Client saves  │
-                                                              │ Token & Logs  │
-                                                              │ In            │
-                                                              └───────────────┘
-```
-
-### Resume Parsing & Job Match Workflow
-
-*(Note: The jobs section is currently unavailable to normal users and only accessible to admins as it doesn't fit well with our core blog website use case and theme).*
-
-```
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│               │     │               │     │               │     │               │
-│ User uploads  │────>│ Extract skills│────>│ Query JSearch │────>│ Display       │
-│ resume (PDF)  │     │ via NLP/Regex │     │ API w/ Skills │     │ matching jobs │
-│               │     │               │     │               │     │               │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
-```
+### Storage Lifecycle
+1. When a user opens any blog article, `blogService.ts` asynchronously writes the full post object into the local `blogs` IndexedDB object store.
+2. If the user disconnects or navigates offline, `blogService.fetchBlogById()` catches the network failure and retrieves the cached article from IndexedDB.
+3. **Quota & Storage Eviction:** To prevent mobile storage warnings, the service monitors `navigator.storage.estimate()` and runs an automated 30-day FIFO cleanup routine (`cleanupOldBlogs`) to purge stale articles.
 
 ---
 
-## Technologies Used
+## 9. Automated CI/CD & Serverless Cron Workflows
 
-### Frontend
+Rather than paying for 24/7 background servers, all background jobs run autonomously via **GitHub Actions** on free Ubuntu runners ($0.00/mo operating cost).
 
-- **React**: UI library for building component-based interfaces
-- **React Router**: For navigation and routing
-- **Tailwind CSS**: Utility-first CSS framework
-- **Framer Motion**: Animation library
-- **Vite**: Frontend build tool
-- **Workbox**: For PWA and service worker management
-- **IndexedDB**: For client-side storage
+### Workflow Specifications
 
-### Backend
+1. **Daily Blog & Intel Automation (`.github/workflows/generate-blog.yml`):**
+   - **Trigger:** Nightly cron at `00:00 UTC` + manual `workflow_dispatch`.
+   - **Execution:** Sets up Node.js 20, builds `@techinsights/database`, runs `npm run generate:blog`, and executes `npm run generate:intel`.
 
-- **Node.js**: JavaScript runtime
-- **Express.js**: Web framework for Node.js
-- **Mongoose**: MongoDB object modeling tool
-- **Axios**: Promise-based HTTP client
-- **Node-cron**: For scheduled tasks
-
-### Database
-
-- **MongoDB**: NoSQL database
-
-### External Services
-
-- **Google Gemini AI API**: For content generation
-- **Unsplash API**: For image sourcing (referenced in the code)
-
-### DevOps
-
-- **Vercel**: For hosting and deployment
-- **GitHub Actions**: For CI/CD and scheduled jobs
-
-### Additional Tools
-
-- **CORS**: Cross-Origin Resource Sharing middleware
-- **dotenv**: Environment variable management
+2. **Weekly Newsletter Automation (`.github/workflows/generate-newsletter.yml`):**
+   - **Trigger:** Scheduled cron every Friday at `17:00 UTC`.
+   - **Execution:** Runs `npm run send:newsletter` to compile top weekly reads and dispatch emails via Nodemailer.
 
 ---
 
-## Deployment Architecture
+## 10. Technologies Used
 
-The application follows a serverless deployment model:
-
-### Frontend Deployment
-
-- Hosted on Vercel
-### Frontend & Read-API Deployment
-
-- **Vercel**: Hosts the React frontend and serverless "read" APIs to eliminate cold-start issues and ensure instant global content delivery.
-- **Payload Optimization**: Excludes heavy blog bodies from list views to minimize data transfer to the edge.
-
-### Backend & Generation Hosting
-
-- **Render**: Hosts the persistent Node.js environment for resource-intensive AI generation and scheduled cron tasks.
-- **Cold Start Elimination**: Users interact mainly with the Vercel-hosted content, while Render handles the heavy lifting in the background.
-
-### Database Hosting
-
-- MongoDB Atlas cloud database
-- Optimized connection handling for serverless environment
-
-### CI/CD Pipeline
-
-- GitHub Actions for automated deployments
-- Scheduled jobs for content generation
-- Testing and validation before deployment
+| Domain | Technology / Library | Purpose |
+| :--- | :--- | :--- |
+| **Monorepo** | Turborepo, npm workspaces | Multi-package task caching & topological builds |
+| **Frontend Framework** | Next.js 15 (App Router), React 19 | Server-Side Rendering, edge routing, SEO |
+| **Styling & Motion** | Tailwind CSS v4, Framer Motion | Cyberpunk / terminal brutalist UI design system |
+| **Data Fetching** | TanStack Query (React Query v5) | In-memory caching, stale-while-revalidate |
+| **HTTP Client** | Axios (with custom interceptors) | Centralized JWT attachment & 401 unauth traps |
+| **Offline Storage** | `idb` (IndexedDB Promise wrapper) | Reliable local offline article caching |
+| **AI Model** | Google Gemini API (`gemini-3.1-flash-lite`) | Autonomous content generation & synthesis |
+| **RSS Ingestion** | `rss-parser` | Live 48-hour news grounding |
+| **Image Engine** | Unsplash API | Real photography matching |
+| **Email Service** | Nodemailer | Responsive dark-mode HTML newsletter delivery |
+| **Database** | MongoDB Atlas, Mongoose ODM | Document storage & serverless connection caching |
+| **Hosting & CI/CD** | Vercel Edge, GitHub Actions | Zero-cost serverless hosting and background automation |
 
 ---
 
-## Conclusion
-
-TechInsightsAI represents a modern, full-stack web application that combines AI-generated content with progressive web app features. The architecture follows best practices for separation of concerns, performance optimization, and user experience design.
-
-The system demonstrates effective integration of:
-
-- AI services for content generation
-- Modern frontend frameworks and libraries
-- Offline-first design principles
-- Responsive and accessible user interfaces
-- Scalable backend architecture
-- Optimized database access patterns
-
-This documentation provides a comprehensive overview of the system architecture, components, and workflows to assist with understanding, maintenance, and future development of the TechInsightsAI platform.
-
----
-
-## Appendix
-
-### Environment Variables
+## 11. Deployment Architecture & Production Setup
 
 ```
-# Frontend (.env)
-VITE_GEMINI_API_KEY=your_gemini_api_key
-VITE_API_BASE_URL=your_backend_url
-
-# Backend (.env)
-MONGODB_URI=your_mongodb_connection_string
-GEMINI_API_KEY=your_gemini_api_key
-PORT=5000
-NODE_ENV=production
-CRON_SECRET=your_cron_secret
+                                  ┌───────────────────────────┐
+                                  │      User's Browser       │
+                                  └─────────────┬─────────────┘
+                                                │
+                                                ▼
+                                  ┌───────────────────────────┐
+                                  │     Vercel Global Edge    │
+                                  │   (Next.js 15 App Router) │
+                                  │                           │
+                                  │  • Static Prerendered UI  │
+                                  │  • Serverless API Routes  │
+                                  └─────────────┬─────────────┘
+                                                │
+                      ┌─────────────────────────┴────────────────────────┐
+                      │                                                  │
+                      ▼                                                  ▼
+        ┌───────────────────────────┐                      ┌───────────────────────────┐
+        │       MongoDB Atlas       │◄─────────────────────┤       GitHub Actions      │
+        │      Cloud Database       │                      │    Serverless Runners     │
+        │                           │                      │                           │
+        │  • Shared Mongoose Schemas│                      │  • Daily 00:00 Blog Cron  │
+        │  • Pooled Connections     │                      │  • Weekly Friday Digest   │
+        └───────────────────────────┘                      └───────────────────────────┘
 ```
 
-### Additional Resources
+1. **Web Deployment (Vercel):**
+   - Framework preset: Next.js.
+   - Root directory: `apps/web`.
+   - Environment variables: `MONGODB_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `NEXT_PUBLIC_APP_URL`.
 
-- [React Documentation](https://reactjs.org/docs/getting-started.html)
-- [Express.js Documentation](https://expressjs.com/)
-- [MongoDB Documentation](https://docs.mongodb.com/)
-- [Google Gemini AI Documentation](https://ai.google.dev/)
-- [Workbox Documentation](https://developers.google.com/web/tools/workbox)
+2. **Cron Workflows (GitHub Actions):**
+   - Configured repository secrets: `MONGODB_URI`, `GEMINI_API_KEY`, `UNSPLASH_ACCESS_KEY`, `EMAIL_USER`, `EMAIL_PASS`.
+
+---
+
+## 12. Appendix & Environment Configuration
+
+### Root `.env` Template
+```bash
+# Database Connection
+MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/techinsights?retryWrites=true&w=majority"
+
+# Google Gemini API
+GEMINI_API_KEY="AIzaSy..."
+
+# Authentication
+JWT_SECRET="your_production_jwt_secret_key"
+
+# Application URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Unsplash Image API (Optional)
+UNSPLASH_ACCESS_KEY="your_unsplash_client_id"
+
+# Newsletter SMTP Configuration
+EMAIL_USER="your-email@gmail.com"
+EMAIL_PASS="your-app-password"
+```
+
+### Essential Workspace Commands
+```bash
+# Start all dev servers concurrently
+npm run dev
+
+# Run type checks across all packages
+npm run check-types
+
+# Production build across all packages
+npm run build
+
+# Generate a new blog post manually
+npm run generate:blog --workspace=@techinsights/ai-worker
+
+# Generate today's tech hack manually
+npm run generate:intel --workspace=@techinsights/ai-worker -- --force
+```
