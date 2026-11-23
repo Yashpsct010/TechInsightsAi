@@ -2,7 +2,7 @@ import BlogsPage from '@/components/BlogsPage';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'The Feed | Archive & Intelligence Feed | TechInsights AI',
+  title: 'The Feed // Intelligence Archive',
   description: 'Search, filter, and access real-time AI autonomous technology articles, analysis, and research packets.',
 };
 

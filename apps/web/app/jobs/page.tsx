@@ -3,8 +3,12 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Future Roles & Engineering Units | TechInsights AI',
+  title: 'Engineering Units & Open Terminals',
   description: 'Explore live engineering, AI, and cybersecurity positions in cognitive computing.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function JobsPage() {

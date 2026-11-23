@@ -1,8 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { connectToDatabase, Blog } from '@techinsights/database';
 
+export const revalidate = 3600; // Revalidate sitemap every hour
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
   // Static routes
   const routes: MetadataRoute.Sitemap = [

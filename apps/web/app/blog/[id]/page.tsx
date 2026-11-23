@@ -11,7 +11,7 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { id } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
   try {
     await connectToDatabase();
@@ -19,12 +19,13 @@ export async function generateMetadata(
 
     if (!blog) {
       return {
-        title: 'Data Node Details | TechInsights AI',
+        title: 'Data Node Details',
         description: 'Deep dive technical intelligence analysis and verified engineering nodes.',
       };
     }
 
-    const title = `${blog.title} | TechInsights AI`;
+    const title = blog.title;
+    const brandedTitle = `${blog.title} | TechInsights AI`;
     const snippet = blog.body ? blog.body.replace(/<[^>]*>/g, '').substring(0, 160) : '';
     const images = blog.image ? [blog.image] : [`${baseUrl}/og-image.png`];
 
@@ -32,7 +33,7 @@ export async function generateMetadata(
       title,
       description: snippet,
       openGraph: {
-        title,
+        title: brandedTitle,
         description: snippet,
         url: `${baseUrl}/blog/${id}`,
         type: 'article',
@@ -42,14 +43,14 @@ export async function generateMetadata(
       },
       twitter: {
         card: 'summary_large_image',
-        title,
+        title: brandedTitle,
         description: snippet,
         images,
       },
     };
   } catch {
     return {
-      title: 'Data Node Details | TechInsights AI',
+      title: 'Data Node Details',
       description: 'Deep dive technical intelligence analysis and verified engineering nodes.',
     };
   }
@@ -57,7 +58,7 @@ export async function generateMetadata(
 
 export default async function BlogNodePage({ params }: Props) {
   const { id } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
   let jsonLd = null;
   try {
