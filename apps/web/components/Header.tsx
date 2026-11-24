@@ -73,7 +73,10 @@ export const Header = () => {
 
   const isLinkActive = (path: string) => {
     if (path === '/') return pathname === '/';
-    return pathname.startsWith(path);
+    if (path === '/blog') {
+      return pathname === '/blog' || (pathname.startsWith('/blog/') && !pathname.startsWith('/blogs'));
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
   return (
@@ -107,7 +110,7 @@ export const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-              <div className="flex items-center gap-1 lg:gap-6 font-mono text-xs lg:text-sm uppercase tracking-widest text-slate-400">
+              <div className="flex items-center gap-1 lg:gap-2 font-mono text-xs uppercase tracking-wider text-slate-400">
                 {navItems.map((navItem, index) => {
                   const active = isLinkActive(navItem.path);
                   return (
@@ -119,20 +122,16 @@ export const Header = () => {
                     >
                       <Link
                         href={navItem.path}
-                        className={`relative px-2 lg:px-3 py-2 transition-colors ${
-                          active ? 'text-white' : 'hover:text-[#ec5b13]'
+                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 border ${
+                          active
+                            ? 'bg-[#ec5b13]/15 text-[#ec5b13] border-[#ec5b13]/35 shadow-[0_0_12px_rgba(236,91,19,0.12)] font-bold'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border-transparent'
                         }`}
                       >
                         {active && (
-                          <motion.span
-                            layoutId="navIndicator"
-                            className="absolute bottom-0 left-0 right-0 h-px bg-[#ec5b13]"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ type: 'spring', stiffness: 300 }}
-                          />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ec5b13] shadow-[0_0_6px_#ec5b13] animate-pulse shrink-0" />
                         )}
-                        <span className="relative z-10">{navItem.name}</span>
+                        <span>{navItem.name}</span>
                       </Link>
                     </motion.div>
                   );
@@ -308,14 +307,17 @@ export const Header = () => {
                         >
                           <Link
                             href={navItem.path}
-                            className={`block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors ${
+                            className={`flex items-center justify-between py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors border ${
                               active
-                                ? 'bg-[#ec5b13]/10 text-[#ec5b13] border border-[#ec5b13]/20'
-                                : 'text-slate-100 hover:bg-white/5 hover:text-white'
+                                ? 'bg-[#ec5b13]/15 text-[#ec5b13] border-[#ec5b13]/30'
+                                : 'text-slate-100 hover:bg-white/5 hover:text-white border-transparent'
                             }`}
                             onClick={() => setIsMenuOpen(false)}
                           >
-                            {navItem.name}
+                            <span>{navItem.name}</span>
+                            {active && (
+                              <span className="w-2 h-2 rounded-full bg-[#ec5b13] shadow-[0_0_8px_#ec5b13] animate-pulse" />
+                            )}
                           </Link>
                         </motion.div>
                       );
@@ -331,14 +333,17 @@ export const Header = () => {
                       >
                         <Link
                           href="/bookmarks"
-                          className={`block py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors ${
+                          className={`flex items-center justify-between py-3 sm:py-4 px-3 sm:px-4 text-lg sm:text-xl font-mono font-bold uppercase tracking-tighter rounded-xl transition-colors border ${
                             pathname === '/bookmarks'
-                              ? 'bg-[#ec5b13]/10 text-[#ec5b13] border border-[#ec5b13]/20'
-                              : 'text-slate-100 hover:bg-white/5 hover:text-white'
+                              ? 'bg-[#ec5b13]/15 text-[#ec5b13] border-[#ec5b13]/30'
+                              : 'text-slate-100 hover:bg-white/5 hover:text-white border-transparent'
                           }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          Bookmarks
+                          <span>Bookmarks</span>
+                          {pathname === '/bookmarks' && (
+                            <span className="w-2 h-2 rounded-full bg-[#ec5b13] shadow-[0_0_8px_#ec5b13] animate-pulse" />
+                          )}
                         </Link>
                       </motion.div>
                     )}

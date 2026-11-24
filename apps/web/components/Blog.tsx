@@ -18,6 +18,8 @@ import blogService from '../services/blogService';
 import { useAuth } from '../context/AuthContext';
 import NewsletterPopup from './NewsletterPopup';
 import { CircuitReadingStreak } from './CircuitReadingStreak';
+import { AudioBriefingPlayer } from './AudioBriefingPlayer';
+import { InArticleNewsletter } from './InArticleNewsletter';
 import { formatDate, calculateReadingTime } from '../utils/formatters';
 
 export const Blog = () => {
@@ -256,6 +258,13 @@ export const Blog = () => {
                   )}
                 </motion.div>
 
+                {/* AI Audio Briefing Player */}
+                <AudioBriefingPlayer
+                  title={blog.title}
+                  body={blog.body}
+                  readingTime={readingTime}
+                />
+
                 {/* Featured Image */}
                 {blog.image && !imageError && (
                   <motion.div
@@ -362,6 +371,9 @@ export const Blog = () => {
                     </ul>
                   </motion.div>
                 )}
+
+                {/* In-Article Newsletter Sync */}
+                <InArticleNewsletter />
               </article>
 
               {/* Sidebar */}

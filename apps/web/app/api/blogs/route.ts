@@ -45,9 +45,8 @@ export async function GET(request: NextRequest) {
       query.createdAt = { $gte: filterDate };
     }
 
-    // Exclude body field for lightweight payload in list views
+    // Fetch blogs with pagination
     const blogs = await Blog.find(query)
-      .select('-body')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

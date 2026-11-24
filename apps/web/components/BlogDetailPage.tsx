@@ -18,6 +18,9 @@ import { formatDate } from '../utils/formatters';
 import { useBlogById } from '../hooks/useBlogById';
 import { useAuth } from '../context/AuthContext';
 import { CircuitReadingStreak } from './CircuitReadingStreak';
+import { AudioBriefingPlayer } from './AudioBriefingPlayer';
+import { InArticleNewsletter } from './InArticleNewsletter';
+import { RelatedArticles } from './RelatedArticles';
 
 export const BlogDetailPage = () => {
   const params = useParams();
@@ -174,6 +177,13 @@ export const BlogDetailPage = () => {
                 </div>
               </motion.div>
 
+              {/* AI Audio Briefing Player */}
+              <AudioBriefingPlayer
+                title={blog.title}
+                body={blog.body}
+                readingTime={readingTime}
+              />
+
               {/* Featured Image */}
               {blog.image && !imageError && (
                 <motion.div
@@ -244,6 +254,9 @@ export const BlogDetailPage = () => {
                   </ul>
                 </motion.div>
               )}
+
+              {/* In-Article Newsletter Sync */}
+              <InArticleNewsletter />
 
               {/* Share + Back */}
               <motion.div
@@ -318,6 +331,9 @@ export const BlogDetailPage = () => {
                   Back_To_Archive
                 </motion.button>
               </motion.div>
+
+              {/* Related Intelligence Nodes */}
+              <RelatedArticles currentBlogId={blog._id} genre={blog.genre} />
             </article>
 
             {/* Sidebar */}

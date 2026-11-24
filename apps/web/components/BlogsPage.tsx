@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight, FaBookmark, FaRegBookmark, FaCalendarAlt, FaClock, FaSearch } from 'react-icons/fa';
 import { fetchBlogArchive, BlogItem } from '../services/blogService';
-import { formatDate } from '../utils/formatters';
+import { formatDate, calculateReadingTime } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 
 export const BlogsPage = () => {
@@ -112,8 +112,7 @@ export const BlogsPage = () => {
   };
 
   const readingTime = (body?: string) => {
-    if (!body) return 0;
-    return Math.max(1, Math.ceil(body.replace(/<[^>]*>/g, '').split(/\s+/).length / 200));
+    return calculateReadingTime(body);
   };
 
   // Animation variants
@@ -452,10 +451,14 @@ export const BlogsPage = () => {
                           )}
 
                           {/* Bottom Metadata */}
-                          <div className="flex items-center justify-between pt-3 border-t border-white/5 font-mono text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-widest">
-                            <span>Read_Time: {readingTime(blog.body)}m</span>
-                            <span className="text-[#ec5b13] flex items-center gap-1 font-bold">
-                              Access_Data <FaArrowRight className="text-[8px]" />
+                          <div className="flex items-center justify-between pt-3 border-t border-white/5 font-mono text-[10px] sm:text-[11px] text-slate-500">
+                            <span className="flex items-center gap-1.5">
+                              <FaClock className="text-[#8b5cf6] text-[10px]" />
+                              <span>{readingTime(blog.body)} min read</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 text-slate-400 group-hover:text-[#ec5b13] transition-colors">
+                              <FaCalendarAlt className="text-[#8b5cf6] text-[10px]" />
+                              <span>{formatDate(blog.createdAt)}</span>
                             </span>
                           </div>
                         </div>
