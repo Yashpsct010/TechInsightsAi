@@ -18,7 +18,6 @@ import { formatDate } from '../utils/formatters';
 import { useBlogById } from '../hooks/useBlogById';
 import { useAuth } from '../context/AuthContext';
 import { CircuitReadingStreak } from './CircuitReadingStreak';
-import { AudioBriefingPlayer } from './AudioBriefingPlayer';
 import { InArticleNewsletter } from './InArticleNewsletter';
 import { RelatedArticles } from './RelatedArticles';
 
@@ -176,13 +175,6 @@ export const BlogDetailPage = () => {
                   <span>{readingTime} Min Read</span>
                 </div>
               </motion.div>
-
-              {/* AI Audio Briefing Player */}
-              <AudioBriefingPlayer
-                title={blog.title}
-                body={blog.body}
-                readingTime={readingTime}
-              />
 
               {/* Featured Image */}
               {blog.image && !imageError && (

@@ -18,7 +18,6 @@ import blogService from '../services/blogService';
 import { useAuth } from '../context/AuthContext';
 import NewsletterPopup from './NewsletterPopup';
 import { CircuitReadingStreak } from './CircuitReadingStreak';
-import { AudioBriefingPlayer } from './AudioBriefingPlayer';
 import { InArticleNewsletter } from './InArticleNewsletter';
 import { formatDate, calculateReadingTime } from '../utils/formatters';
 
@@ -257,13 +256,6 @@ export const Blog = () => {
                     </motion.button>
                   )}
                 </motion.div>
-
-                {/* AI Audio Briefing Player */}
-                <AudioBriefingPlayer
-                  title={blog.title}
-                  body={blog.body}
-                  readingTime={readingTime}
-                />
 
                 {/* Featured Image */}
                 {blog.image && !imageError && (
